@@ -4,7 +4,7 @@ import { appConfig } from './app.config';
 
 describe('appConfig', () => {
   it('carga la configuración principal', () => {
-    expect(appConfig.name).toBe('Gaston Web Starter');
+    expect(appConfig.name).toBe('GasMarket');
     expect(appConfig.theme.primary).toMatch(/^#[0-9a-f]{6}$/i);
     expect(appConfig.theme.sidebarExpandedWidth).toBe('270px');
     expect(appConfig.features.internalDemo).toBe(true);
