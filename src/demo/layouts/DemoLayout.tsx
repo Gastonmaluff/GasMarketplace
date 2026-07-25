@@ -5,7 +5,7 @@ import { Sidebar } from '../../components/shell/Sidebar';
 import { Topbar } from '../../components/shell/Topbar';
 import { demoNavigation, demoShellLabels, demoUser } from '../demo.config';
 
-const SIDEBAR_PREFERENCE_KEY = 'gaston-web-starter:sidebar:v1';
+const SIDEBAR_PREFERENCE_KEY = 'gasmarket:sidebar:v1';
 
 function readSidebarPreference(): boolean {
   try {

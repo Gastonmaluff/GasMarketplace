@@ -4,14 +4,14 @@ import { describe, expect, it } from 'vitest';
 
 import { AppRoutes } from './App';
 
-describe('Gaston Web Starter', () => {
+describe('GasMarket', () => {
   it('renderiza la aplicación', () => {
     render(
       <MemoryRouter>
         <AppRoutes />
       </MemoryRouter>,
     );
-    expect(screen.getByRole('heading', { name: /una base sólida/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /bienvenido a gasmarket/i })).toBeInTheDocument();
   });
 
   it('muestra la página 404 para una ruta inexistente', () => {

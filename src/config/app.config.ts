@@ -1,8 +1,8 @@
 import type { AppConfig } from '../types/app';
 
 export const appConfig = {
-  name: 'Gaston Web Starter',
-  description: 'Base técnica profesional para crear sistemas web personalizados.',
+  name: 'GasMarket',
+  description: 'Tienda web para compra de mercaderías.',
   branding: {
     logoFull: '/favicon.svg',
     logoCompact: '/favicon.svg',

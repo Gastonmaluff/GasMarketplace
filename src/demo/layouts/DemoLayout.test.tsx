@@ -28,7 +28,7 @@ describe('DemoLayout', () => {
     const user = userEvent.setup();
     renderLayout();
     await user.click(screen.getByRole('button', { name: 'Colapsar barra lateral' }));
-    expect(window.localStorage.getItem('gaston-web-starter:sidebar:v1')).toBe('collapsed');
+    expect(window.localStorage.getItem('gasmarket:sidebar:v1')).toBe('collapsed');
     expect(screen.getByRole('button', { name: 'Expandir barra lateral' })).toBeInTheDocument();
   });
 
@@ -65,6 +65,6 @@ describe('DemoLayout', () => {
     await user.tab();
     expect(screen.getByRole('link', { name: 'Saltar al contenido' })).toHaveFocus();
     await user.tab();
-    expect(screen.getByRole('link', { name: 'Gaston Web Starter, inicio' })).toHaveFocus();
+    expect(screen.getByRole('link', { name: 'GasMarket, inicio' })).toHaveFocus();
   });
 });

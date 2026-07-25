@@ -20,8 +20,8 @@ export function HomePage() {
     <>
       <section className="hero-section">
         <div className="hero-section__content">
-          <p className="eyebrow">Plantilla base profesional</p>
-          <h1>Una base sólida para el próximo sistema web.</h1>
+          <p className="eyebrow">Tienda en línea</p>
+          <h1>Bienvenido a GasMarket.</h1>
           <p className="hero-section__lead">{appConfig.description}</p>
           <div className="button-group">
             <Link className="button button--primary" to="/demo">
@@ -32,7 +32,7 @@ export function HomePage() {
             </a>
           </div>
         </div>
-        <div className="readiness-card" aria-label="Estado de la plantilla">
+        <div className="readiness-card" aria-label="Estado del sistema">
           <div className="readiness-card__header">
             <span>Estado del entorno</span>
             <span className="badge">Listo</span>
