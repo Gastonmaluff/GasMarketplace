@@ -1,6 +1,6 @@
-# Gaston Web Starter
+# GasMarketplace
 
-Plantilla base profesional para iniciar sistemas web personalizados con una arquitectura limpia, estricta y fácil de mantener. Es un punto de partida técnico: no pertenece a ningún cliente ni incorpora reglas de un negocio concreto.
+GasMarketplace es una plataforma de comercio electrónico construida sobre Gaston Web Starter. Hereda de la plantilla su arquitectura limpia y estricta, su núcleo reutilizable y sus herramientas de calidad, y sobre esa base desarrolla la tienda GasMarket: catálogo público, carrito, checkout como invitado y panel administrativo. La arquitectura funcional del MVP está definida en [docs/ECOMMERCE-ARCHITECTURE.md](docs/ECOMMERCE-ARCHITECTURE.md).
 
 ## Qué incluye
 
