@@ -51,6 +51,22 @@ Copiá `.env.example` como `.env.local` y completá únicamente valores público
 
 Mientras falte cualquiera de las variables requeridas, `getFirebaseServices()` devuelve `null` y la interfaz indica claramente que Firebase está pendiente. No hace falta Firebase para ejecutar, probar o compilar la plantilla.
 
+### Emulator Suite y panel administrativo
+
+Con `VITE_FIREBASE_USE_EMULATORS=true` en `.env.local`, la aplicación se conecta a Firebase Emulator Suite local (Auth 9099, Firestore 8080, Functions 5001, Storage 9199, UI 4000):
+
+```bash
+npx -y firebase-tools@latest emulators:start
+```
+
+La autenticación administrativa usa el paquete privado `@gaston/auth` (vendoreado en `vendor/`) y exige el custom claim `admin`, que solo se asigna con Firebase Admin SDK desde un entorno privilegiado. Para sembrar el primer administrador contra el emulador:
+
+```bash
+cd functions && FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 node scripts/set-admin-claim.cjs admin@ejemplo.com contraseña
+```
+
+El login vive en `/admin/login` y las rutas `/admin` están protegidas por `AdminGuard` (`src/modules/admin-auth`).
+
 ## Personalización
 
 Editá `src/config/app.config.ts` para cambiar:

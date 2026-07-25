@@ -19,4 +19,14 @@ export default tseslint.config(
       globals: globals.browser,
     },
   },
+  {
+    files: ['functions/**/*.cjs'],
+    languageOptions: {
+      globals: globals.node,
+      sourceType: 'commonjs',
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
 );
