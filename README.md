@@ -112,4 +112,4 @@ Los componentes genéricos permanecen disponibles aunque se elimine toda la demo
 
 Creá cada capacidad de negocio dentro de `src/modules/<nombre-del-modulo>`. Un módulo debe agrupar sus rutas, componentes, servicios, tipos y pruebas, y exponer una API pública pequeña. Antes de crear uno nuevo, verificá que no exista una solución reutilizable equivalente. Evitá importar detalles internos de un módulo desde otro.
 
-La estructura y las decisiones principales se explican en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Las reglas para agentes y colaboradores automatizados están en [AGENTS.md](AGENTS.md).
+La estructura y las decisiones principales se explican en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). La arquitectura funcional del comercio electrónico GasMarket (módulos, Firestore, flujo de pedidos, seguridad y roadmap del MVP) está documentada en [docs/ECOMMERCE-ARCHITECTURE.md](docs/ECOMMERCE-ARCHITECTURE.md). Las reglas para agentes y colaboradores automatizados están en [AGENTS.md](AGENTS.md).
