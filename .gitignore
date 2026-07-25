@@ -16,6 +16,12 @@ coverage
 !.env.example
 *.local
 
+# Firebase
+.firebase/
+functions/lib
+firebase-export-*/
+*-debug.log
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

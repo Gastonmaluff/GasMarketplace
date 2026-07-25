@@ -27,6 +27,20 @@ Registro de vulnerabilidades conocidas y decisiones tomadas. Última revisión: 
   o antes de exponer la aplicación a tráfico real. Reevaluar en cada auditoría si aparece un parche
   en la línea 7.
 
+## Workspace `functions/` (Cloud Functions)
+
+El workspace usa `firebase-admin@14.2.0` y `firebase-functions@7.3.0` (última estable; el tag
+`latest` del registry apunta a una release candidate que se evitó deliberadamente). `npm audit`
+reporta 12 vulnerabilidades (5 altas, 7 moderadas), todas **transitivas dentro del propio SDK de
+Google** (`brace-expansion` vía `google-gax`, `uuid` vía `gaxios`/`teeny-request`):
+
+- No existe versión más nueva de `firebase-admin` que las resuelva; el único "fix" que ofrece npm
+  es un downgrade breaking a `firebase-admin@10`, descartado.
+- Es código que corre únicamente en el servidor (Cloud Functions), no en el navegador, y los
+  vectores (expansión de llaves y bounds de `uuid` v3/v5/v6) no se ejercitan con entrada de
+  usuario en este proyecto.
+- Reevaluar en cada auditoría cuando Google publique versiones que actualicen su cadena interna.
+
 ## Mayores disponibles no aplicados (sin necesidad clara)
 
 `@testing-library/jest-dom` 7, `@types/node` 26 y `typescript` 7 tienen versiones mayores

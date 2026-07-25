@@ -1,0 +1,13 @@
+rules_version = '2';
+
+// Baseline de arranque: denegación total.
+// Las reglas reales del MVP (catálogo público con active == true, pedidos solo
+// administración, validadores por colección) se desarrollarán en la fase de
+// seguridad del roadmap documentado en docs/ECOMMERCE-ARCHITECTURE.md.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

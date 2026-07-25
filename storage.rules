@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// Baseline de arranque: denegación total.
+// Las reglas reales (imágenes de productos administradas por el panel) se
+// definirán junto con la fase de seguridad del roadmap.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
