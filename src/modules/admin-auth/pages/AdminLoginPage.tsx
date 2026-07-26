@@ -17,6 +17,7 @@ export function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -24,6 +25,7 @@ export function AdminLoginPage() {
     if (service === null || submitting) return;
 
     setError(null);
+    setInfo(null);
     setSubmitting(true);
     try {
       await service.signIn({ email, password });
@@ -37,6 +39,23 @@ export function AdminLoginPage() {
       setError(isAuthError(cause) ? cause.message : 'Ocurrió un error inesperado.');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handlePasswordReset() {
+    if (service === null || submitting) return;
+
+    setError(null);
+    setInfo(null);
+    if (email.trim() === '') {
+      setError('Ingresá tu correo electrónico para recuperar la contraseña.');
+      return;
+    }
+    try {
+      await service.sendPasswordReset({ email });
+      setInfo('Te enviamos un correo con instrucciones para restablecer la contraseña.');
+    } catch (cause) {
+      setError(isAuthError(cause) ? cause.message : 'Ocurrió un error inesperado.');
     }
   }
 
@@ -64,6 +83,11 @@ export function AdminLoginPage() {
                 {error}
               </Alert>
             ) : null}
+            {info ? (
+              <Alert onDismiss={() => setInfo(null)} title="Correo enviado" tone="success">
+                {info}
+              </Alert>
+            ) : null}
             <TextField
               autoComplete="email"
               label="Correo electrónico"
@@ -84,6 +108,9 @@ export function AdminLoginPage() {
             />
             <Button loading={submitting} loadingLabel="Ingresando" type="submit">
               Ingresar
+            </Button>
+            <Button onClick={() => void handlePasswordReset()} size="small" variant="ghost">
+              ¿Olvidaste tu contraseña?
             </Button>
           </form>
         )}
