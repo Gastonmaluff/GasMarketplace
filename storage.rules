@@ -1,10 +1,35 @@
 rules_version = '2';
 
-// Baseline de arranque: denegación total.
-// Las reglas reales (imágenes de productos administradas por el panel) se
-// definirán junto con la fase de seguridad del roadmap.
+// GasMarketplace — Reglas de Storage (fase de catálogo)
+//
+// Imágenes públicas de catálogo bajo categories/{id}/ y products/{id}/:
+// lectura pública (el storefront las necesita), escritura exclusiva de
+// administradores con MIME y tamaño validados. Todo lo demás, denegado.
+
 service firebase.storage {
   match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    // En delete request.resource es null; en subida se valida MIME y 5 MB.
+    function isValidImageWrite() {
+      return request.resource == null ||
+        (request.resource.size <= 5 * 1024 * 1024 &&
+          request.resource.contentType.matches('image/(jpeg|png|webp)'));
+    }
+
+    match /categories/{categoryId}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidImageWrite();
+    }
+
+    match /products/{productId}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidImageWrite();
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

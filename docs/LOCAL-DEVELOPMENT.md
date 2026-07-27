@@ -83,9 +83,49 @@ npm run dev
 
 - Tienda pública: http://localhost:5173/
 - Login administrativo: http://localhost:5173/admin/login
+- Panel: http://localhost:5173/admin (configuración, categorías y productos)
 - Los correos de recuperación de contraseña no se envían realmente: el emulador los captura y se
   ven en la Emulator UI (pestaña Authentication) o vía
   `http://127.0.0.1:9099/emulator/v1/projects/gasmarketplace-65156/oobCodes`.
+
+## Administración del catálogo
+
+Con la app corriendo y los emuladores activos, iniciá sesión como administrador y seguí este orden:
+
+1. **Configuración** (`/admin/configuracion`): la primera vez se cargan valores por defecto seguros
+   (PYG, es-PY, America/Asuncion). Definí nombre, WhatsApp, medios de pago y, si usás delivery,
+   activá el toggle y agregá zonas con su costo entero en guaraníes. Guardar crea `settings/public`
+   y `settings/private`.
+2. **Categorías** (`/admin/categorias/nueva`): el slug se sugiere desde el nombre y se puede editar;
+   es único (respaldado por `categorySlugs/{slug}`). La imagen es opcional. Una categoría con
+   productos asociados no se puede eliminar físicamente: desactivala.
+3. **Productos** (`/admin/productos/nuevo`): nombre, slug, precio entero en PYG, categorías (hasta 5,
+   con una principal), stock y hasta 10 imágenes (JPEG/PNG/WebP, 5 MB) con una principal y orden
+   arrastrable. En edición, el stock se corrige con **ajuste manual**, que registra un movimiento en
+   `stockMovements`.
+
+### Rutas de Storage e imágenes
+
+- Categorías: `categories/{categoryId}/{nombreGenerado}`
+- Productos: `products/{productId}/{nombreGenerado}`
+- Solo JPEG, PNG y WebP; máximo 5 MB por archivo; nombres generados (nunca el original). Lectura
+  pública (storefront), escritura solo admin. Las imágenes reemplazadas se borran únicamente después
+  de guardar con éxito; si Firestore falla, las nuevas se limpian.
+
+### Reiniciar los datos locales
+
+Los datos del emulador son volátiles: se borran al detenerlo. Para empezar de cero sin reiniciar,
+usá la Emulator UI (http://127.0.0.1:4000) → cada emulador tiene su acción de limpieza. Después
+volvé a asignar el claim admin con `set-admin-claim.cjs`.
+
+### Limitaciones conocidas
+
+- Firestore y Storage no comparten transacción: si el borrado de un archivo falla tras eliminar el
+  documento, queda un huérfano inofensivo en Storage (documentado en `product.service.ts`).
+- Las reglas no iteran arrays: el contenido de `deliveryZones` e `images` se valida en el cliente y
+  las reglas solo limitan su tamaño. Ambas colecciones son de escritura exclusiva admin.
+- La eliminación de productos usa el contrato `canDeleteProduct`, que hoy siempre permite; cuando
+  existan pedidos deberá consultar si alguno referencia el producto.
 
 ## Validación
 
@@ -101,6 +141,15 @@ npm run build
 
 Las pruebas no dependen de `.env.local`: el setup de Vitest anula las variables de Firebase para
 que el suite sea determinista en cualquier máquina.
+
+### Pruebas de Security Rules
+
+Corren aparte, contra el emulador de Firestore (no forman parte de `npm run test` ni de CI). Con los
+emuladores activos:
+
+```bash
+npm run test:rules
+```
 
 ## @gaston/auth
 

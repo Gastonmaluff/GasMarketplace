@@ -15,11 +15,29 @@ import { NotFoundPage } from '../pages/NotFoundPage';
 const AdminGuard = lazy(() =>
   import('../modules/admin-auth').then((module) => ({ default: module.AdminGuard })),
 );
+const AdminLayout = lazy(() =>
+  import('../modules/admin-auth').then((module) => ({ default: module.AdminLayout })),
+);
 const AdminHomePage = lazy(() =>
   import('../modules/admin-auth').then((module) => ({ default: module.AdminHomePage })),
 );
 const AdminLoginPage = lazy(() =>
   import('../modules/admin-auth').then((module) => ({ default: module.AdminLoginPage })),
+);
+const AdminSettingsPage = lazy(() =>
+  import('../modules/store-settings').then((module) => ({ default: module.AdminSettingsPage })),
+);
+const AdminCategoriesPage = lazy(() =>
+  import('../modules/catalog').then((module) => ({ default: module.AdminCategoriesPage })),
+);
+const AdminCategoryFormPage = lazy(() =>
+  import('../modules/catalog').then((module) => ({ default: module.AdminCategoryFormPage })),
+);
+const AdminProductsPage = lazy(() =>
+  import('../modules/catalog').then((module) => ({ default: module.AdminProductsPage })),
+);
+const AdminProductFormPage = lazy(() =>
+  import('../modules/catalog').then((module) => ({ default: module.AdminProductFormPage })),
 );
 
 export function AppRoutes() {
@@ -36,7 +54,16 @@ export function AppRoutes() {
         </Route>
         <Route path="admin/login" element={<AdminLoginPage />} />
         <Route element={<AdminGuard />}>
-          <Route path="admin" element={<AdminHomePage />} />
+          <Route element={<AdminLayout />}>
+            <Route path="admin" element={<AdminHomePage />} />
+            <Route path="admin/configuracion" element={<AdminSettingsPage />} />
+            <Route path="admin/categorias" element={<AdminCategoriesPage />} />
+            <Route path="admin/categorias/nueva" element={<AdminCategoryFormPage />} />
+            <Route path="admin/categorias/:id" element={<AdminCategoryFormPage />} />
+            <Route path="admin/productos" element={<AdminProductsPage />} />
+            <Route path="admin/productos/nuevo" element={<AdminProductFormPage />} />
+            <Route path="admin/productos/:id" element={<AdminProductFormPage />} />
+          </Route>
         </Route>
       </Routes>
     </Suspense>

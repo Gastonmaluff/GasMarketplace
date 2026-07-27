@@ -1,0 +1,540 @@
+import { useEffect, useId, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+
+import { appConfig } from '../../../../config/app.config';
+import { Alert } from '../../../../components/ui/Alert';
+import { Button } from '../../../../components/ui/Button';
+import { LoadingState } from '../../../../components/ui/LoadingState';
+import { NumericInput } from '../../../../components/ui/inputs/NumericInput';
+import { PageHeader } from '../../../../components/ui/PageHeader';
+import { TextField } from '../../../../components/ui/TextField';
+import { Toast } from '../../../../components/ui/Toast';
+import { slugify } from '../../shared/text';
+import { CatalogError } from '../../shared/catalog-context';
+import { listCategories } from '../../categories/category.service';
+import type { Category } from '../../categories/category.types';
+import { ProductImagesEditor } from '../components/ProductImagesEditor';
+import { adjustStock, getProduct, listStockMovements, saveProduct } from '../product.service';
+import {
+  MAX_PRODUCT_CATEGORIES,
+  type EditableProductImage,
+  type ProductDraft,
+  type StockMovement,
+} from '../product.types';
+
+const emptyDraft: ProductDraft = {
+  name: '',
+  slug: '',
+  shortDescription: '',
+  description: '',
+  sku: '',
+  barcode: '',
+  categoryIds: [],
+  primaryCategoryId: '',
+  price: null,
+  compareAtPrice: null,
+  costPrice: null,
+  stock: 0,
+  lowStockThreshold: null,
+  trackStock: true,
+  allowBackorder: false,
+  featured: false,
+  active: true,
+};
+
+function formatMovementDate(millis?: number): string {
+  if (!millis) return '—';
+  return new Intl.DateTimeFormat(appConfig.locale, {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: appConfig.timezone,
+  }).format(new Date(millis));
+}
+
+export function AdminProductFormPage() {
+  const navigate = useNavigate();
+  const descriptionId = useId();
+  const { id: productId } = useParams<{ id: string }>();
+  const isNew = productId === undefined;
+
+  const [draft, setDraft] = useState<ProductDraft | null>(isNew ? emptyDraft : null);
+  const [images, setImages] = useState<EditableProductImage[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [movements, setMovements] = useState<StockMovement[]>([]);
+  const [slugTouched, setSlugTouched] = useState(!isNew);
+  const [dirty, setDirty] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [imageProgress, setImageProgress] = useState<Record<string, number>>({});
+  const [toast, setToast] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const [newStock, setNewStock] = useState<number | null>(null);
+  const [adjustReason, setAdjustReason] = useState('');
+  const [adjusting, setAdjusting] = useState(false);
+  const [adjustError, setAdjustError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loads: Promise<void>[] = [
+      listCategories().then((loaded) => {
+        if (!cancelled) setCategories(loaded);
+      }),
+    ];
+    if (!isNew) {
+      loads.push(
+        getProduct(productId).then((product) => {
+          if (cancelled) return;
+          if (!product) {
+            setLoadError('El producto no existe.');
+            return;
+          }
+          setDraft({
+            name: product.name,
+            slug: product.slug,
+            shortDescription: product.shortDescription,
+            description: product.description,
+            sku: product.sku ?? '',
+            barcode: product.barcode ?? '',
+            categoryIds: product.categoryIds,
+            primaryCategoryId: product.primaryCategoryId ?? '',
+            price: product.price,
+            compareAtPrice: product.compareAtPrice ?? null,
+            costPrice: product.costPrice ?? null,
+            stock: product.stock,
+            lowStockThreshold: product.lowStockThreshold ?? null,
+            trackStock: product.trackStock,
+            allowBackorder: product.allowBackorder,
+            featured: product.featured,
+            active: product.active,
+          });
+          setImages(
+            [...product.images]
+              .sort((first, second) => first.order - second.order)
+              .map((image) => ({
+                id: image.id,
+                alt: image.alt,
+                isPrimary: image.isPrimary,
+                url: image.url,
+                path: image.path,
+              })),
+          );
+        }),
+        listStockMovements(productId).then((loaded) => {
+          if (!cancelled) setMovements(loaded);
+        }),
+      );
+    }
+    Promise.all(loads).catch(() => {
+      if (!cancelled) setLoadError('No se pudo cargar la información del producto.');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isNew, productId, reloadKey]);
+
+  useEffect(() => {
+    if (!dirty) return undefined;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
+
+  if (loadError) {
+    return (
+      <div className="admin-page">
+        <Alert title="Error" tone="danger">
+          {loadError}
+        </Alert>
+        <Button onClick={() => navigate('/admin/productos')} variant="secondary">
+          Volver a productos
+        </Button>
+      </div>
+    );
+  }
+
+  if (!draft) {
+    return <LoadingState label="Cargando producto" />;
+  }
+
+  const update = (patch: Partial<ProductDraft>) => {
+    setDirty(true);
+    setDraft((current) => (current ? { ...current, ...patch } : current));
+  };
+  const updateImages = (next: EditableProductImage[]) => {
+    setDirty(true);
+    setImages(next);
+  };
+
+  const toggleCategory = (categoryId: string, selected: boolean) => {
+    const nextIds = selected
+      ? [...draft.categoryIds, categoryId]
+      : draft.categoryIds.filter((id) => id !== categoryId);
+    update({
+      categoryIds: nextIds,
+      primaryCategoryId:
+        !selected && draft.primaryCategoryId === categoryId
+          ? (nextIds[0] ?? '')
+          : draft.primaryCategoryId === '' && nextIds.length === 1
+            ? nextIds[0]!
+            : draft.primaryCategoryId,
+    });
+  };
+
+  async function handleSave() {
+    if (!draft || saving) return;
+    setErrors([]);
+    setSaving(true);
+    setImageProgress({});
+    try {
+      await saveProduct({
+        ...(productId ? { productId } : {}),
+        draft,
+        images,
+        onImageProgress: (imageId, percent) =>
+          setImageProgress((current) => ({ ...current, [imageId]: percent })),
+      });
+      setDirty(false);
+      navigate('/admin/productos');
+    } catch (cause) {
+      setErrors(
+        cause instanceof CatalogError
+          ? cause.errors
+          : ['No se pudo guardar el producto. Intentá nuevamente.'],
+      );
+    } finally {
+      setSaving(false);
+      setImageProgress({});
+    }
+  }
+
+  async function handleAdjustStock() {
+    if (!productId || adjusting || newStock === null) return;
+    setAdjustError(null);
+    setAdjusting(true);
+    try {
+      await adjustStock({ productId, newStock, reason: adjustReason });
+      setToast('Ajuste de stock registrado.');
+      setNewStock(null);
+      setAdjustReason('');
+      setReloadKey((key) => key + 1);
+    } catch (cause) {
+      setAdjustError(
+        cause instanceof CatalogError ? cause.message : 'No se pudo registrar el ajuste.',
+      );
+    } finally {
+      setAdjusting(false);
+    }
+  }
+
+  return (
+    <div className="admin-page">
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Inicio', href: '/admin' },
+          { label: 'Productos', href: '/admin/productos' },
+          { label: isNew ? 'Nuevo' : 'Editar' },
+        ]}
+        primaryAction={
+          <Button loading={saving} loadingLabel="Guardando" onClick={() => void handleSave()}>
+            Guardar producto
+          </Button>
+        }
+        title={isNew ? 'Nuevo producto' : `Editar: ${draft.name || 'producto'}`}
+      />
+
+      {errors.length > 0 ? (
+        <Alert onDismiss={() => setErrors([])} title="Revisá estos puntos" tone="danger">
+          {errors.join(' ')}
+        </Alert>
+      ) : null}
+
+      <section className="admin-section" aria-labelledby="product-basics">
+        <h2 id="product-basics">Datos básicos</h2>
+        <div className="form-grid">
+          <TextField
+            label="Nombre"
+            onChange={(event) => {
+              const name = event.currentTarget.value;
+              update(slugTouched ? { name } : { name, slug: slugify(name) });
+            }}
+            required
+            value={draft.name}
+          />
+          <TextField
+            helpText="Se genera desde el nombre; podés ajustarlo."
+            label="Slug"
+            onChange={(event) => {
+              setSlugTouched(true);
+              update({ slug: event.currentTarget.value });
+            }}
+            required
+            value={draft.slug}
+          />
+          <div className="field--full">
+            <TextField
+              helpText="Resumen corto para listados (máximo 200 caracteres)."
+              label="Descripción breve"
+              onChange={(event) => update({ shortDescription: event.currentTarget.value })}
+              value={draft.shortDescription}
+            />
+          </div>
+          <div className="field--full text-field">
+            <label htmlFor={descriptionId}>Descripción completa</label>
+            <textarea
+              className="text-field__input"
+              id={descriptionId}
+              onChange={(event) => update({ description: event.currentTarget.value })}
+              rows={5}
+              value={draft.description}
+            />
+          </div>
+          <TextField
+            helpText="Opcional; debe ser único."
+            label="SKU"
+            onChange={(event) => update({ sku: event.currentTarget.value })}
+            value={draft.sku}
+          />
+          <TextField
+            helpText="Opcional; debe ser único."
+            label="Código de barras"
+            onChange={(event) => update({ barcode: event.currentTarget.value })}
+            value={draft.barcode}
+          />
+        </div>
+      </section>
+
+      <section className="admin-section" aria-labelledby="product-categories">
+        <h2 id="product-categories">Categorías</h2>
+        {categories.length === 0 ? (
+          <p className="admin-page__note">
+            Todavía no hay categorías. Podés crearlas en Categorías y asignarlas después.
+          </p>
+        ) : (
+          <>
+            <div className="admin-section__toggles">
+              {categories.map((category) => {
+                const selected = draft.categoryIds.includes(category.id);
+                return (
+                  <label className="checkbox-field" key={category.id}>
+                    <input
+                      checked={selected}
+                      disabled={!selected && draft.categoryIds.length >= MAX_PRODUCT_CATEGORIES}
+                      onChange={(event) => toggleCategory(category.id, event.currentTarget.checked)}
+                      type="checkbox"
+                    />
+                    <span>
+                      {category.name}
+                      {category.active ? null : <small>Inactiva</small>}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            {draft.categoryIds.length > 0 ? (
+              <div className="text-field">
+                <label htmlFor="primary-category">Categoría principal</label>
+                <select
+                  className="text-field__input"
+                  id="primary-category"
+                  onChange={(event) => update({ primaryCategoryId: event.currentTarget.value })}
+                  value={draft.primaryCategoryId}
+                >
+                  <option value="">Sin categoría principal</option>
+                  {draft.categoryIds.map((categoryId) => (
+                    <option key={categoryId} value={categoryId}>
+                      {categories.find((category) => category.id === categoryId)?.name ??
+                        categoryId}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+          </>
+        )}
+      </section>
+
+      <section className="admin-section" aria-labelledby="product-pricing">
+        <h2 id="product-pricing">Precios (₲ enteros)</h2>
+        <div className="form-grid">
+          <NumericInput
+            allowEmpty={false}
+            currency={appConfig.currency}
+            label="Precio de venta"
+            min={0}
+            onValueChange={(value) => update({ price: value })}
+            value={draft.price}
+          />
+          <NumericInput
+            currency={appConfig.currency}
+            helpText="Opcional; debe ser mayor al precio de venta."
+            label="Precio anterior"
+            min={0}
+            onValueChange={(value) => update({ compareAtPrice: value })}
+            value={draft.compareAtPrice}
+          />
+          <NumericInput
+            currency={appConfig.currency}
+            helpText="Uso interno; no se muestra en la tienda."
+            label="Costo interno"
+            min={0}
+            onValueChange={(value) => update({ costPrice: value })}
+            value={draft.costPrice}
+          />
+        </div>
+      </section>
+
+      <section className="admin-section" aria-labelledby="product-stock">
+        <h2 id="product-stock">Stock</h2>
+        <div className="form-grid">
+          <label className="checkbox-field">
+            <input
+              checked={draft.trackStock}
+              onChange={(event) => update({ trackStock: event.currentTarget.checked })}
+              type="checkbox"
+            />
+            <span>
+              Controlar stock<small>Descuenta unidades y avisa cuando queda poco.</small>
+            </span>
+          </label>
+          <label className="checkbox-field">
+            <input
+              checked={draft.allowBackorder}
+              onChange={(event) => update({ allowBackorder: event.currentTarget.checked })}
+              type="checkbox"
+            />
+            <span>
+              Permitir venta sin stock<small>Acepta pedidos aunque el stock llegue a cero.</small>
+            </span>
+          </label>
+          <NumericInput
+            allowEmpty={false}
+            helpText={isNew ? 'Stock inicial.' : 'Para corregir stock usá el ajuste de más abajo.'}
+            label="Stock actual"
+            onValueChange={(value) => update({ stock: value })}
+            value={draft.stock}
+            {...(isNew ? {} : { disabled: true })}
+          />
+          <NumericInput
+            helpText="Vacío usa el umbral general de Configuración."
+            label="Umbral de stock bajo"
+            min={0}
+            onValueChange={(value) => update({ lowStockThreshold: value })}
+            value={draft.lowStockThreshold}
+          />
+        </div>
+      </section>
+
+      <section className="admin-section" aria-labelledby="product-visibility">
+        <h2 id="product-visibility">Visibilidad</h2>
+        <div className="admin-section__toggles">
+          <label className="checkbox-field">
+            <input
+              checked={draft.active}
+              onChange={(event) => update({ active: event.currentTarget.checked })}
+              type="checkbox"
+            />
+            <span>
+              Activo<small>Solo los productos activos serán visibles en la tienda.</small>
+            </span>
+          </label>
+          <label className="checkbox-field">
+            <input
+              checked={draft.featured}
+              onChange={(event) => update({ featured: event.currentTarget.checked })}
+              type="checkbox"
+            />
+            <span>
+              Destacado<small>Aparecerá en la portada de la tienda.</small>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <section className="admin-section" aria-labelledby="product-images-title">
+        <h2 id="product-images-title">Imágenes</h2>
+        <ProductImagesEditor
+          disabled={saving}
+          images={images}
+          onChange={updateImages}
+          onError={(message) => setErrors((current) => [...new Set([...current, message])])}
+          progressById={imageProgress}
+        />
+      </section>
+
+      {!isNew ? (
+        <section className="admin-section" aria-labelledby="product-stock-adjust">
+          <h2 id="product-stock-adjust">Ajuste manual de stock</h2>
+          <p className="admin-page__note">
+            Stock actual: <strong>{draft.stock}</strong>. El ajuste queda registrado en los
+            movimientos.
+          </p>
+          {adjustError ? (
+            <Alert
+              onDismiss={() => setAdjustError(null)}
+              title="Ajuste no registrado"
+              tone="danger"
+            >
+              {adjustError}
+            </Alert>
+          ) : null}
+          <div className="form-grid">
+            <NumericInput label="Stock nuevo" onValueChange={setNewStock} value={newStock} />
+            <TextField
+              label="Motivo"
+              onChange={(event) => setAdjustReason(event.currentTarget.value)}
+              placeholder="Ej.: recuento físico, rotura, carga inicial"
+              required
+              value={adjustReason}
+            />
+          </div>
+          <div>
+            <Button
+              loading={adjusting}
+              loadingLabel="Registrando"
+              onClick={() => void handleAdjustStock()}
+              variant="secondary"
+            >
+              Registrar ajuste
+            </Button>
+          </div>
+          {movements.length > 0 ? (
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Cambio</th>
+                    <th>Antes</th>
+                    <th>Después</th>
+                    <th>Motivo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {movements.map((movement) => (
+                    <tr key={movement.id}>
+                      <td data-label="Fecha">{formatMovementDate(movement.createdAtMillis)}</td>
+                      <td data-label="Cambio">
+                        {movement.quantity > 0 ? `+${movement.quantity}` : movement.quantity}
+                      </td>
+                      <td data-label="Antes">{movement.previousStock}</td>
+                      <td data-label="Después">{movement.resultingStock}</td>
+                      <td data-label="Motivo">{movement.reason}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="admin-page__note">Sin movimientos registrados todavía.</p>
+          )}
+        </section>
+      ) : null}
+
+      {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
+    </div>
+  );
+}

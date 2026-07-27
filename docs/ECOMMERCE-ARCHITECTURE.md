@@ -66,7 +66,11 @@ normalizada `+595…` por separado (regla 18).
 
 ```
 products/{productId}              lectura pública solo con active == true
+productSlugs/{slug}               índice de unicidad { productId } — solo admin
+productSkus/{sku}                 índice de unicidad { productId } — solo admin
+productBarcodes/{barcode}         índice de unicidad { productId } — solo admin
 categories/{categoryId}           lectura pública solo con active == true
+categorySlugs/{slug}              índice de unicidad { categoryId } — solo admin
 orders/{orderId}                  solo administración; creado por la Function
 orders/{orderId}/events/{eventId} historial de eventos del pedido
 customers/{customerId}            solo administración
@@ -84,9 +88,22 @@ Decisiones estructurales:
   completo: no se puede exponer un campo y ocultar otro dentro del mismo documento.
 - El documento principal del pedido guarda solo `status`, `updatedAt` y `updatedBy`; cada cambio
   agrega un documento en `events`.
+- **Unicidad por documento índice**: Firestore no garantiza unicidad de campos. Cada valor único
+  (slug de categoría y producto, SKU y código de barras normalizados) se respalda con un documento
+  índice cuyo ID es el propio valor y cuyo contenido apunta al documento dueño. La creación,
+  edición y liberación de estas reservas ocurre dentro de la misma transacción que escribe la
+  entidad, de modo que dos entidades nunca comparten un valor y no quedan reservas huérfanas. Un
+  SKU o código de barras vacío no crea índice.
+- Los documentos de producto y categoría guardan además `normalizedName` (minúsculas, para
+  filtrado en el cliente) junto al `name` visible que conserva mayúsculas y tildes.
+- El stock básico se materializa en el propio producto (`stock`, `trackStock`, `allowBackorder`,
+  `lowStockThreshold`); cada ajuste manual escribe el nuevo stock y un `stockMovements` de tipo
+  `ajuste` en una única transacción, con `previousStock`/`resultingStock` consistentes. Los
+  descuentos por venta y las reposiciones por cancelación llegan con la fase de pedidos.
 - Búsqueda: Firestore no ofrece full-text. El MVP usa `searchTokens[]` (tokens en minúsculas
-  derivados del nombre) con `array-contains`. Si queda corto, se integrará un buscador externo sin
-  afectar a los consumidores del módulo `catalog`.
+  derivados del nombre y los códigos, generados siempre en el servicio y nunca aceptados del
+  formulario) con `array-contains`. Si queda corto, se integrará un buscador externo sin afectar a
+  los consumidores del módulo `catalog`.
 
 ## Rutas
 
