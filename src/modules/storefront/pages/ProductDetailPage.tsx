@@ -4,12 +4,12 @@ import { Link, useParams } from 'react-router-dom';
 import { appConfig } from '../../../config/app.config';
 import { Alert } from '../../../components/ui/Alert';
 import { Badge } from '../../../components/ui/Badge';
-import { Button } from '../../../components/ui/Button';
+import { Icon } from '../../../components/ui/Icon';
 import { LoadingState } from '../../../components/ui/LoadingState';
-import { PageHeader } from '../../../components/ui/PageHeader';
 import { getActiveProductBySlug, listRelatedProducts, type Product } from '../../catalog';
 import { ProductGallery } from '../components/ProductGallery';
 import { ProductGrid } from '../components/ProductGrid';
+import { StoreBreadcrumbs } from '../components/StoreBreadcrumbs';
 import { useStorefrontContext } from '../hooks/storefront-context';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { getAvailability } from '../utils/availability';
@@ -27,11 +27,7 @@ export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const currentSlug = slug ?? '';
   const { categories, settings } = useStorefrontContext();
-  const [result, setResult] = useState<ProductResult>({
-    slug: '',
-    product: null,
-    error: false,
-  });
+  const [result, setResult] = useState<ProductResult>({ slug: '', product: null, error: false });
   const [related, setRelated] = useState<{ slug: string; items: Product[] }>({
     slug: '',
     items: [],
@@ -75,9 +71,11 @@ export function ProductDetailPage() {
   }
   if (result.error) {
     return (
-      <Alert title="No pudimos cargar el producto" tone="danger">
-        Revisá tu conexión e intentá nuevamente.
-      </Alert>
+      <div className="store-state">
+        <Alert title="No pudimos cargar el producto" tone="danger">
+          Revisá tu conexión e intentá nuevamente.
+        </Alert>
+      </div>
     );
   }
   if (!product) {
@@ -103,8 +101,8 @@ export function ProductDetailPage() {
 
   return (
     <div className="store-product">
-      <PageHeader
-        breadcrumbs={[
+      <StoreBreadcrumbs
+        items={[
           { label: 'Inicio', href: '/' },
           { label: 'Catálogo', href: '/catalogo' },
           ...(primaryCategory
@@ -112,22 +110,14 @@ export function ProductDetailPage() {
             : []),
           { label: product.name },
         ]}
-        title=""
       />
 
       <div className="product-detail">
         <ProductGallery images={product.images} productName={product.name} />
 
         <div className="product-detail__info">
+          {product.featured ? <Badge tone="info">Destacado</Badge> : null}
           <h1 className="product-detail__title">{product.name}</h1>
-
-          <div className="product-detail__pricing">
-            <span className="product-detail__price">{formatPrice(product.price)}</span>
-            {product.compareAtPrice ? (
-              <span className="product-detail__compare">{formatPrice(product.compareAtPrice)}</span>
-            ) : null}
-            {savings !== null ? <Badge tone="danger">-{savings}%</Badge> : null}
-          </div>
 
           <span
             className={`availability availability--${availability.status}`}
@@ -136,12 +126,25 @@ export function ProductDetailPage() {
             {availability.label}
           </span>
 
+          <div className="product-detail__pricing">
+            <span className="product-detail__price">{formatPrice(product.price)}</span>
+            {product.compareAtPrice ? (
+              <span className="product-detail__compare">{formatPrice(product.compareAtPrice)}</span>
+            ) : null}
+            {savings !== null ? <Badge tone="danger">-{savings}% OFF</Badge> : null}
+          </div>
+
           {product.shortDescription ? <p>{product.shortDescription}</p> : null}
 
           <div className="product-detail__actions">
-            <Button disabled title="Disponible próximamente">
-              Agregar al carrito
-            </Button>
+            <button
+              className="button button--primary"
+              disabled
+              title="Disponible próximamente"
+              type="button"
+            >
+              <Icon name="cart" size={18} /> Comprar · Pagás al recibir
+            </button>
             {whatsappLink ? (
               <a
                 className="button button--ghost"
@@ -182,7 +185,9 @@ export function ProductDetailPage() {
       {relatedItems.length > 0 ? (
         <section aria-labelledby="related-title" className="store-section">
           <div className="store-section__head">
-            <h2 id="related-title">Productos relacionados</h2>
+            <h2 className="store-section__title" id="related-title">
+              Productos relacionados
+            </h2>
           </div>
           <ProductGrid products={relatedItems} />
         </section>
