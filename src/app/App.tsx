@@ -23,6 +23,9 @@ const CategoryPage = lazy(() =>
 const SearchPage = lazy(() =>
   import('../modules/storefront').then((module) => ({ default: module.SearchPage })),
 );
+const ProductDetailPage = lazy(() =>
+  import('../modules/storefront').then((module) => ({ default: module.ProductDetailPage })),
+);
 const CartComingSoonPage = lazy(() =>
   import('../modules/storefront').then((module) => ({ default: module.CartComingSoonPage })),
 );
@@ -68,6 +71,7 @@ export function AppRoutes() {
           <Route path="catalogo" element={<CatalogPage />} />
           <Route path="categoria/:slug" element={<CategoryPage />} />
           <Route path="buscar" element={<SearchPage />} />
+          <Route path="producto/:slug" element={<ProductDetailPage />} />
           <Route path="carrito" element={<CartComingSoonPage />} />
           <Route path="*" element={<StoreNotFoundPage />} />
         </Route>
