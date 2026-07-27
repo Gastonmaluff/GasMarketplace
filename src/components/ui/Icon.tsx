@@ -10,7 +10,10 @@ export type IconName =
   | 'user'
   | 'upload'
   | 'check'
-  | 'alert';
+  | 'alert'
+  | 'settings'
+  | 'tag'
+  | 'box';
 
 interface IconProps {
   name: IconName;
@@ -32,6 +35,13 @@ const paths: Record<IconName, React.ReactNode> = {
   alert: (
     <path d="M12 9v4m0 4h.01M10.3 3.7 2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.7a2 2 0 0 0-3.4 0Z" />
   ),
+  settings: (
+    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-3a7.4 7.4 0 0 0-.1-1.2l2-1.5-2-3.5-2.4 1a7.5 7.5 0 0 0-2-1.2L14.5 3h-5l-.4 2.6a7.5 7.5 0 0 0-2 1.2l-2.4-1-2 3.5 2 1.5a7.4 7.4 0 0 0 0 2.4l-2 1.5 2 3.5 2.4-1a7.5 7.5 0 0 0 2 1.2l.4 2.6h5l.4-2.6a7.5 7.5 0 0 0 2-1.2l2.4 1 2-3.5-2-1.5c.1-.4.1-.8.1-1.2Z" />
+  ),
+  tag: (
+    <path d="m20.6 13.4-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8ZM7.5 7.5h.01" />
+  ),
+  box: <path d="m21 8-9-5-9 5m18 0v8l-9 5m9-13-9 5m-9-5v8l9 5m-9-13 9 5m0 8V13" />,
 };
 
 export function Icon({ name, size = 20 }: IconProps) {

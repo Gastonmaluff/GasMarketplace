@@ -1,31 +1,37 @@
-import { Button } from '../../../components/ui/Button';
-import { useAdminSession } from '../hooks/useAdminSession';
-import { getAdminAuthService } from '../services/admin-auth.service';
+import { Link } from 'react-router-dom';
+
+import { PageHeader } from '../../../components/ui/PageHeader';
 
 /**
- * Página inicial mínima del panel. Las secciones reales (productos, pedidos,
- * clientes, stock, configuración) llegan en la fase de panel administrativo
- * del roadmap.
+ * Página inicial del panel. El resumen operativo (pedidos pendientes, stock
+ * bajo) llega con las fases de pedidos e inventario del roadmap.
  */
 export function AdminHomePage() {
-  const session = useAdminSession();
-  const email = session.status === 'admin' ? session.email : null;
-
   return (
-    <main className="admin-auth" id="main-content">
-      <section className="admin-auth__card">
-        <header className="admin-auth__header">
-          <h1>Panel administrativo</h1>
-          {email ? <p>Sesión iniciada como {email}</p> : null}
-        </header>
-        <p>
-          La autenticación administrativa está activa. Los módulos de productos, pedidos, clientes,
-          stock y configuración se implementarán en las próximas fases del roadmap.
-        </p>
-        <Button onClick={() => void getAdminAuthService()?.signOut()} variant="secondary">
-          Cerrar sesión
-        </Button>
-      </section>
-    </main>
+    <div className="admin-page">
+      <PageHeader
+        description="Administrá la configuración, las categorías y los productos de la tienda."
+        eyebrow="Panel administrativo"
+        title="Inicio"
+      />
+      <div className="admin-shortcuts">
+        <Link className="admin-shortcut" to="/admin/productos">
+          <strong>Productos</strong>
+          <span>Cargar mercadería, precios, imágenes y stock.</span>
+        </Link>
+        <Link className="admin-shortcut" to="/admin/categorias">
+          <strong>Categorías</strong>
+          <span>Organizar el catálogo en secciones.</span>
+        </Link>
+        <Link className="admin-shortcut" to="/admin/configuracion">
+          <strong>Configuración</strong>
+          <span>Datos de la tienda, entrega y medios de pago.</span>
+        </Link>
+      </div>
+      <p className="admin-page__note">
+        Los pedidos, clientes y el resumen operativo se habilitarán en las próximas fases del
+        roadmap.
+      </p>
+    </div>
   );
 }

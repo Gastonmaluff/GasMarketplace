@@ -15,11 +15,17 @@ import { NotFoundPage } from '../pages/NotFoundPage';
 const AdminGuard = lazy(() =>
   import('../modules/admin-auth').then((module) => ({ default: module.AdminGuard })),
 );
+const AdminLayout = lazy(() =>
+  import('../modules/admin-auth').then((module) => ({ default: module.AdminLayout })),
+);
 const AdminHomePage = lazy(() =>
   import('../modules/admin-auth').then((module) => ({ default: module.AdminHomePage })),
 );
 const AdminLoginPage = lazy(() =>
   import('../modules/admin-auth').then((module) => ({ default: module.AdminLoginPage })),
+);
+const AdminSettingsPage = lazy(() =>
+  import('../modules/store-settings').then((module) => ({ default: module.AdminSettingsPage })),
 );
 
 export function AppRoutes() {
@@ -36,7 +42,10 @@ export function AppRoutes() {
         </Route>
         <Route path="admin/login" element={<AdminLoginPage />} />
         <Route element={<AdminGuard />}>
-          <Route path="admin" element={<AdminHomePage />} />
+          <Route element={<AdminLayout />}>
+            <Route path="admin" element={<AdminHomePage />} />
+            <Route path="admin/configuracion" element={<AdminSettingsPage />} />
+          </Route>
         </Route>
       </Routes>
     </Suspense>
