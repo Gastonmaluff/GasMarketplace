@@ -15,10 +15,9 @@ const SORT_OPTIONS: ReadonlyArray<{ value: ProductSort; label: string }> = [
 
 export function SortSelect({ onChange, value }: SortSelectProps) {
   return (
-    <div className="text-field">
+    <div className="store-toolbar__field">
       <label htmlFor="store-sort">Ordenar</label>
       <select
-        className="text-field__input"
         id="store-sort"
         onChange={(event) => onChange(event.currentTarget.value as ProductSort)}
         value={value}
