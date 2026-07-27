@@ -14,6 +14,15 @@ const StorefrontLayout = lazy(() =>
 const HomePage = lazy(() =>
   import('../modules/storefront').then((module) => ({ default: module.HomePage })),
 );
+const CatalogPage = lazy(() =>
+  import('../modules/storefront').then((module) => ({ default: module.CatalogPage })),
+);
+const CategoryPage = lazy(() =>
+  import('../modules/storefront').then((module) => ({ default: module.CategoryPage })),
+);
+const SearchPage = lazy(() =>
+  import('../modules/storefront').then((module) => ({ default: module.SearchPage })),
+);
 const CartComingSoonPage = lazy(() =>
   import('../modules/storefront').then((module) => ({ default: module.CartComingSoonPage })),
 );
@@ -56,6 +65,9 @@ export function AppRoutes() {
       <Routes>
         <Route element={<StorefrontLayout />}>
           <Route index element={<HomePage />} />
+          <Route path="catalogo" element={<CatalogPage />} />
+          <Route path="categoria/:slug" element={<CategoryPage />} />
+          <Route path="buscar" element={<SearchPage />} />
           <Route path="carrito" element={<CartComingSoonPage />} />
           <Route path="*" element={<StoreNotFoundPage />} />
         </Route>
