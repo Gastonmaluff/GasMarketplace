@@ -305,6 +305,82 @@ describe('stockMovements', () => {
   });
 });
 
+describe('consultas del storefront', () => {
+  it('categoría por slug con active == true se permite; sin active se rechaza', async () => {
+    await seed('categories/bebidas', { ...validCategory(ADMIN_UID), slug: 'bebidas' });
+    await assertSucceeds(
+      getDocs(
+        query(
+          collection(visitorDb(), 'categories'),
+          where('active', '==', true),
+          where('slug', '==', 'bebidas'),
+        ),
+      ),
+    );
+    await assertFails(
+      getDocs(query(collection(visitorDb(), 'categories'), where('slug', '==', 'bebidas'))),
+    );
+  });
+
+  it('producto por slug con active == true se permite; sin active se rechaza', async () => {
+    await seed('products/yerba', { ...validProduct(ADMIN_UID), slug: 'yerba' });
+    await assertSucceeds(
+      getDocs(
+        query(
+          collection(visitorDb(), 'products'),
+          where('active', '==', true),
+          where('slug', '==', 'yerba'),
+        ),
+      ),
+    );
+    await assertFails(
+      getDocs(query(collection(visitorDb(), 'products'), where('slug', '==', 'yerba'))),
+    );
+  });
+
+  it('productos por categoría con active == true se permiten; sin active se rechazan', async () => {
+    await seed('products/yerba', {
+      ...validProduct(ADMIN_UID),
+      categoryIds: ['cat-1'],
+    });
+    await assertSucceeds(
+      getDocs(
+        query(
+          collection(visitorDb(), 'products'),
+          where('active', '==', true),
+          where('categoryIds', 'array-contains', 'cat-1'),
+        ),
+      ),
+    );
+    await assertFails(
+      getDocs(
+        query(collection(visitorDb(), 'products'), where('categoryIds', 'array-contains', 'cat-1')),
+      ),
+    );
+  });
+
+  it('búsqueda pública por searchTokens exige active == true', async () => {
+    await seed('products/yerba', { ...validProduct(ADMIN_UID) });
+    await assertSucceeds(
+      getDocs(
+        query(
+          collection(visitorDb(), 'products'),
+          where('active', '==', true),
+          where('searchTokens', 'array-contains', 'yerba'),
+        ),
+      ),
+    );
+    await assertFails(
+      getDocs(
+        query(
+          collection(visitorDb(), 'products'),
+          where('searchTokens', 'array-contains', 'yerba'),
+        ),
+      ),
+    );
+  });
+});
+
 describe('colecciones cerradas', () => {
   it('orders, customers y counters siguen bloqueados incluso para admin', async () => {
     await seed('orders/o1', { status: 'pendiente' });

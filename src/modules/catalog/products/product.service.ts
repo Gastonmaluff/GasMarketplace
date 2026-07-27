@@ -38,7 +38,7 @@ import type {
 const MAX_PRODUCTS = 300;
 const MAX_MOVEMENTS = 20;
 
-function toProduct(snapshot: DocumentSnapshot): Product {
+export function toProduct(snapshot: DocumentSnapshot): Product {
   const data = snapshot.data() ?? {};
   const images = Array.isArray(data.images)
     ? data.images.filter(

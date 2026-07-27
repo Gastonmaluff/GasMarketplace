@@ -4,23 +4,29 @@ import { describe, expect, it } from 'vitest';
 
 import { AppRoutes } from './App';
 
-describe('GasMarket', () => {
-  it('renderiza la aplicación', () => {
+// Sin Firebase configurado (entorno de pruebas), el storefront cae a defaults
+// seguros: settings por defecto y sin categorías/productos.
+describe('GasMarket storefront', () => {
+  it('renderiza la home pública con el nombre de la tienda', async () => {
     render(
       <MemoryRouter>
         <AppRoutes />
       </MemoryRouter>,
     );
-    expect(screen.getByRole('heading', { name: /bienvenido a gasmarket/i })).toBeInTheDocument();
-  });
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /gasmarket/i }, { timeout: 25000 }),
+    ).toBeInTheDocument();
+  }, 30000);
 
-  it('muestra la página 404 para una ruta inexistente', () => {
+  it('muestra la 404 pública para una ruta inexistente', async () => {
     render(
       <MemoryRouter initialEntries={['/ruta-inexistente']}>
         <AppRoutes />
       </MemoryRouter>,
     );
-    expect(screen.getByRole('heading', { name: /esta ruta no forma parte/i })).toBeInTheDocument();
-    expect(screen.getByText('404')).toBeInTheDocument();
-  });
+    expect(
+      await screen.findByRole('heading', { name: /página no encontrada/i }, { timeout: 25000 }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Error 404')).toBeInTheDocument();
+  }, 30000);
 });

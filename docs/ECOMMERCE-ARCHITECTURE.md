@@ -154,6 +154,30 @@ where('slug', '==', requestedSlug)
 limit(1)
 ```
 
+### Implementación del storefront público
+
+La API pública del catálogo vive en `src/modules/catalog/public` y la consume el módulo
+`src/modules/storefront` (que solo importa la API pública de `catalog` y `store-settings`, nunca
+detalles internos de administración). Precisiones de implementación:
+
+- **Paginación por cursor** (`startAfter` con el último `DocumentSnapshot`), no offset. Se pide un
+  elemento extra por página para saber si hay más (`hasMore`).
+- **Orden**: destacados (`featured desc, updatedAt desc`), recientes (`updatedAt desc`), precio
+  (`price asc/desc`) y nombre (`normalizedName asc`). Firestore agrega `__name__` ascendente como
+  desempate implícito, suficiente para un orden total estable con cursor.
+- **Filtro de disponibilidad**: se resuelve en el cliente sobre la página traída, porque depende de
+  `trackStock`/`stock`/`allowBackorder` y no existe una consulta Firestore de un solo criterio que
+  lo exprese. Los demás filtros (categoría, destacados) y el orden sí van al servidor.
+- **Búsqueda**: MVP sobre `searchTokens` con `array-contains` del primer token normalizado del
+  término. No es full-text; un buscador externo se integraría detrás de la misma función pública sin
+  afectar al storefront.
+- **Lectura pública de `settings/public`** mediante `loadPublicStoreSettings()`, que no exige sesión
+  y cae a defaults seguros; el storefront nunca lee `settings/private`.
+- **Campos internos** (`costPrice`, `lowStockThreshold`, `createdBy`, `updatedBy`) no se muestran. Se
+  mantiene la limitación conocida de Firestore: las reglas aplican a documentos completos, por lo que
+  un producto activo es legible entero; la separación público/privado a nivel de documento se
+  evaluará si algún campo interno debe dejar de viajar al cliente.
+
 ## Flujo del carrito
 
 1. El carrito vive en el cliente: estado en memoria más persistencia en `localStorage` con clave
