@@ -6,12 +6,22 @@ import { LoadingState } from '../components/ui/LoadingState';
 import { DemoLayout } from '../demo/layouts/DemoLayout';
 import { ComponentsDemoPage } from '../demo/pages/ComponentsDemoPage';
 import { DemoPage } from '../demo/pages/DemoPage';
-import { PublicLayout } from '../layouts/PublicLayout';
-import { HomePage } from '../pages/HomePage';
-import { NotFoundPage } from '../pages/NotFoundPage';
 
-// El área administrativa (y con ella el SDK de Firebase) se carga bajo demanda
-// para no engordar el bundle público de la tienda.
+// Storefront público (incluye Firebase para las consultas del catálogo).
+const StorefrontLayout = lazy(() =>
+  import('../modules/storefront').then((module) => ({ default: module.StorefrontLayout })),
+);
+const HomePage = lazy(() =>
+  import('../modules/storefront').then((module) => ({ default: module.HomePage })),
+);
+const CartComingSoonPage = lazy(() =>
+  import('../modules/storefront').then((module) => ({ default: module.CartComingSoonPage })),
+);
+const StoreNotFoundPage = lazy(() =>
+  import('../modules/storefront').then((module) => ({ default: module.StoreNotFoundPage })),
+);
+
+// Área administrativa.
 const AdminGuard = lazy(() =>
   import('../modules/admin-auth').then((module) => ({ default: module.AdminGuard })),
 );
@@ -44,9 +54,10 @@ export function AppRoutes() {
   return (
     <Suspense fallback={<LoadingState label="Cargando" />}>
       <Routes>
-        <Route element={<PublicLayout />}>
+        <Route element={<StorefrontLayout />}>
           <Route index element={<HomePage />} />
-          <Route path="*" element={<NotFoundPage />} />
+          <Route path="carrito" element={<CartComingSoonPage />} />
+          <Route path="*" element={<StoreNotFoundPage />} />
         </Route>
         <Route element={<DemoLayout />}>
           <Route path="demo" element={<DemoPage />} />

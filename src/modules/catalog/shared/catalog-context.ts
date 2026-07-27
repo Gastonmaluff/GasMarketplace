@@ -27,3 +27,16 @@ export function getCatalogContext(): CatalogContext {
   }
   return { database: firebase.database, storage: firebase.storage, uid };
 }
+
+/**
+ * Acceso de solo lectura para el storefront público: no exige sesión, pero sí
+ * que Firebase esté configurado. Las consultas que lo usan deben incluir
+ * `active == true` para cumplir las Security Rules.
+ */
+export function getPublicCatalogDatabase(): Firestore {
+  const firebase = getFirebaseServices();
+  if (!firebase) {
+    throw new CatalogError(['La tienda no está disponible en este momento.']);
+  }
+  return firebase.database;
+}

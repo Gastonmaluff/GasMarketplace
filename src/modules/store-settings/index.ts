@@ -1,5 +1,6 @@
 export { AdminSettingsPage } from './pages/AdminSettingsPage';
-export { loadStoreSettings } from './settings.service';
+export { loadStoreSettings, loadPublicStoreSettings } from './settings.service';
+export { createDefaultPublicSettings } from './settings.defaults';
 export {
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHODS,

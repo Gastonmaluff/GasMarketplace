@@ -25,7 +25,7 @@ import type { Category, CategoryDraft } from './category.types';
 
 const MAX_CATEGORIES = 200;
 
-function toCategory(snapshot: DocumentSnapshot): Category {
+export function toCategory(snapshot: DocumentSnapshot): Category {
   const data = snapshot.data() ?? {};
   return {
     id: snapshot.id,

@@ -41,6 +41,19 @@ function mergeWithDefaults<T extends object>(defaults: T, stored: unknown): T {
   return merged;
 }
 
+/**
+ * Lectura pública de settings/public para el storefront. No exige sesión y
+ * nunca toca settings/private. Devuelve defaults seguros si el documento no
+ * existe o Firebase no está configurado.
+ */
+export async function loadPublicStoreSettings(): Promise<PublicStoreSettings> {
+  const firebase = getFirebaseServices();
+  if (!firebase) return createDefaultPublicSettings();
+
+  const snapshot = await getDoc(doc(firebase.database, 'settings', 'public'));
+  return mergeWithDefaults(createDefaultPublicSettings(), snapshot.data());
+}
+
 /** Carga ambos documentos de settings, aplicando defaults seguros si no existen. */
 export async function loadStoreSettings(): Promise<StoreSettings> {
   const { database } = getContext();
