@@ -3,6 +3,12 @@
 Guía para levantar GasMarketplace en una máquina de desarrollo. Nada de esta guía toca el proyecto
 Firebase real: todo ocurre contra Firebase Emulator Suite.
 
+> Para publicar/actualizar la **preview pública** en Firebase Hosting (proyecto staging, no
+> emuladores) ver [DEPLOYMENT.md](DEPLOYMENT.md). En resumen: `npm run build:staging` y luego
+> `npx -y firebase-tools@latest hosting:channel:deploy storefront-review --expires 7d --project staging`
+> (re-ejecutar el mismo comando actualiza la misma preview). El seed de datos demostrativos de
+> staging es `npm run seed:staging`.
+
 ## Requisitos
 
 - Node.js 22.12 o superior.

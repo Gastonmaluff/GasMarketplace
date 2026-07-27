@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "gasmarketplace-65156"
+    "production": "gasmarketplace-65156",
+    "staging": "gasmarketplace-staging-7c3a"
   }
 }
