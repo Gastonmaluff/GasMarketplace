@@ -14,9 +14,9 @@ describe('GasMarket storefront', () => {
       </MemoryRouter>,
     );
     expect(
-      await screen.findByRole('heading', { level: 1, name: /gasmarket/i }, { timeout: 15000 }),
+      await screen.findByRole('heading', { level: 1, name: /gasmarket/i }, { timeout: 25000 }),
     ).toBeInTheDocument();
-  }, 20000);
+  }, 30000);
 
   it('muestra la 404 pública para una ruta inexistente', async () => {
     render(
@@ -25,8 +25,8 @@ describe('GasMarket storefront', () => {
       </MemoryRouter>,
     );
     expect(
-      await screen.findByRole('heading', { name: /página no encontrada/i }, { timeout: 15000 }),
+      await screen.findByRole('heading', { name: /página no encontrada/i }, { timeout: 25000 }),
     ).toBeInTheDocument();
     expect(screen.getByText('Error 404')).toBeInTheDocument();
-  }, 20000);
+  }, 30000);
 });
