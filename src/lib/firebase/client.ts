@@ -1,10 +1,10 @@
 import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
-import { getAuth, type Auth } from 'firebase/auth';
-import { getFirestore, type Firestore } from 'firebase/firestore';
-import { getFunctions, type Functions } from 'firebase/functions';
-import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { connectAuthEmulator, getAuth, type Auth } from 'firebase/auth';
+import { connectFirestoreEmulator, getFirestore, type Firestore } from 'firebase/firestore';
+import { connectFunctionsEmulator, getFunctions, type Functions } from 'firebase/functions';
+import { connectStorageEmulator, getStorage, type FirebaseStorage } from 'firebase/storage';
 
-import { firebaseConfig, isFirebaseConfigured } from './config';
+import { firebaseConfig, isFirebaseConfigured, useFirebaseEmulators } from './config';
 
 export interface FirebaseServices {
   app: FirebaseApp;
@@ -14,7 +14,16 @@ export interface FirebaseServices {
   storage: FirebaseStorage;
 }
 
+const EMULATOR_HOST = '127.0.0.1';
+
 let services: FirebaseServices | null | undefined;
+
+function connectEmulators({ auth, database, functions, storage }: FirebaseServices): void {
+  connectAuthEmulator(auth, `http://${EMULATOR_HOST}:9099`, { disableWarnings: true });
+  connectFirestoreEmulator(database, EMULATOR_HOST, 8080);
+  connectFunctionsEmulator(functions, EMULATOR_HOST, 5001);
+  connectStorageEmulator(storage, EMULATOR_HOST, 9199);
+}
 
 export function getFirebaseServices(): FirebaseServices | null {
   if (!isFirebaseConfigured) return null;
@@ -28,6 +37,10 @@ export function getFirebaseServices(): FirebaseServices | null {
     functions: getFunctions(app),
     storage: getStorage(app),
   };
+
+  if (useFirebaseEmulators) {
+    connectEmulators(services);
+  }
 
   return services;
 }

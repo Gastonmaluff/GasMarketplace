@@ -23,5 +23,6 @@ Estas reglas aplican a todo el repositorio:
 19. No aplicar capitalización automática a correos, contraseñas, RUC, códigos o identificadores.
 20. Aplicar normalización de nombres únicamente en campos donde corresponda y de forma explícita.
 21. Utilizar `es-PY` como locale predeterminado, permitiendo sobrescribirlo cuando el sistema lo requiera.
+22. Actualizar `docs/ROADMAP.md` en el mismo cambio que modifique el estado de una tarea del roadmap.
 
 Cuando una implementación necesite desviarse de estas reglas, documentar la razón y el alcance antes de hacer el cambio.

@@ -19,3 +19,5 @@ export const firebaseConfig = {
 export const isFirebaseConfigured = requiredFirebaseKeys.every((key) =>
   Boolean(import.meta.env[key]?.trim()),
 );
+
+export const useFirebaseEmulators = import.meta.env.VITE_FIREBASE_USE_EMULATORS === 'true';
