@@ -84,9 +84,70 @@ npm run dev
 - Tienda pública: http://localhost:5173/
 - Login administrativo: http://localhost:5173/admin/login
 - Panel: http://localhost:5173/admin (configuración, categorías y productos)
-- Los correos de recuperación de contraseña no se envían realmente: el emulador los captura y se
-  ven en la Emulator UI (pestaña Authentication) o vía
-  `http://127.0.0.1:9099/emulator/v1/projects/gasmarketplace-65156/oobCodes`.
+
+## Storefront público
+
+Rutas públicas (no requieren sesión; solo muestran datos con `active == true`):
+
+| Ruta               | Contenido                                                |
+| ------------------ | -------------------------------------------------------- |
+| `/`                | Home: hero, categorías, destacados, beneficios, CTA.     |
+| `/catalogo`        | Catálogo con filtros, orden y paginación por cursor.     |
+| `/categoria/:slug` | Productos de una categoría activa (404 si no existe).    |
+| `/buscar?q=texto`  | Búsqueda MVP por `searchTokens`.                         |
+| `/producto/:slug`  | Ficha con galería, disponibilidad y WhatsApp.            |
+| `/carrito`         | Placeholder "Próximamente" (el carrito llega en Fase 4). |
+
+### Sembrar un catálogo local de prueba
+
+Con los emuladores y la app corriendo, iniciá sesión como administrador y cargá datos demostrativos
+(claramente locales, nunca datos reales de clientes):
+
+1. `/admin/configuracion`: guardá la configuración (define WhatsApp para que aparezcan los botones).
+2. `/admin/categorias/nueva`: creá 3+ categorías activas.
+3. `/admin/productos/nuevo`: creá 8+ productos variados — activos, alguno inactivo (no debe verse en la
+   tienda), destacados, con y sin stock, uno con "permitir venta sin stock" (backorder), alguno con
+   precio anterior y con varias imágenes.
+4. Abrí `/` y recorré home → categoría → catálogo → ficha.
+
+### Consultas Firestore del storefront
+
+Todas incluyen `active == true` (las Security Rules rechazan, no filtran, cualquier consulta que
+pueda devolver inactivos — también la lectura por slug o por ID):
+
+- Categorías activas: `where active == true, orderBy order`.
+- Categoría por slug: `where active == true, where slug == :slug, limit 1`.
+- Productos: `where active == true` + filtro opcional de categoría (`array-contains`) o destacados,
+  con orden (destacados, recientes, precio, nombre) y **paginación por cursor** (`startAfter`, no
+  offset). El filtro de disponibilidad se aplica en el cliente sobre la página traída, porque no hay
+  una consulta Firestore razonable que lo exprese (depende de `trackStock`/`stock`/`allowBackorder`).
+- Producto por slug: `where active == true, where slug == :slug, limit 1`.
+- Búsqueda: `where active == true, where searchTokens array-contains :token`. Es un MVP: usa el
+  primer token normalizado del término, **no** es full-text (sin Algolia/Typesense/Meilisearch).
+
+### Imágenes públicas
+
+Se sirven desde Storage (`categories/{id}/…`, `products/{id}/…`) con lectura pública. El componente
+`ProductImage` muestra un placeholder accesible si falta la URL o la imagen falla, y usa
+`loading="lazy"` en grillas y miniaturas.
+
+### WhatsApp
+
+Los botones usan `whatsappNumberNormalized` de `settings/public` con enlaces `https://wa.me/…`; en la
+ficha el mensaje ("Hola, quiero consultar por …") se codifica. Si no hay número configurado, los
+botones se ocultan.
+
+### Limitación SEO (SPA)
+
+El storefront ajusta `title`, `description`, Open Graph, canonical y `robots` por ruta desde el
+cliente (`useDocumentMeta`). Al ser una SPA sin SSR/prerendering, los crawlers que **no** ejecutan
+JavaScript ven el HTML inicial, no el contenido por ruta. Las rutas `/buscar`, `/carrito` y las 404
+se marcan `noindex`. Un SSR/prerender queda para una fase posterior si se necesita indexación
+completa.
+
+> Los correos de recuperación de contraseña no se envían realmente: el emulador los captura y se ven
+> en la Emulator UI (pestaña Authentication) o vía
+> `http://127.0.0.1:9099/emulator/v1/projects/gasmarketplace-65156/oobCodes`.
 
 ## Administración del catálogo
 
@@ -150,6 +211,11 @@ emuladores activos:
 ```bash
 npm run test:rules
 ```
+
+Cubren las consultas reales del storefront (lectura pública de `settings/public`, categorías y
+productos activos, por slug y por categoría, y búsqueda por `searchTokens`), y el bloqueo de
+`settings/private`, documentos inactivos, consultas sin `active == true`, índices de unicidad y
+`stockMovements`.
 
 ## @gaston/auth
 

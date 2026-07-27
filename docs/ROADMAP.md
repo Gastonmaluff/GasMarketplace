@@ -29,7 +29,7 @@ Todo terminado.
 - ✓ Rutas protegidas (`AdminGuard`).
 - ✓ Sesión, logout y recuperación.
 
-## FASE 3 — Catálogo
+## FASE 3 — Catálogo ✓
 
 - ✓ StoreSettings (configuración pública/privada, zonas de entrega).
 - ✓ Categorías (CRUD administrativo, slugs únicos, imágenes).
@@ -37,29 +37,26 @@ Todo terminado.
 - ✓ Imágenes (Storage, principal, orden, límites y limpieza).
 - ✓ Stock básico (trackStock, allowBackorder, umbrales, ajustes con movimientos).
 - ✓ Security Rules de catálogo con pruebas contra el emulador.
-- ○ Catálogo público (inicio, catálogo, categorías, búsqueda, ficha).
+- ✓ Catálogo público (inicio, catálogo, categorías, búsqueda, ficha, galería, disponibilidad, SEO básico).
 
-## FASE 4 — Carrito (pendiente)
+## FASE 4 — Venta (pendiente)
 
-- ☐ Módulo `cart` con persistencia local y revalidación.
-
-## FASE 5 — Backend de pedidos (pendiente)
-
+- ☐ Carrito (`cart`) con persistencia local y revalidación.
+- ☐ Checkout de invitado (zonas de entrega, confirmación).
 - ☐ Cloud Function `createOrder` transaccional con pruebas contra el emulador.
+- ☐ Pedidos (panel: listado, detalle, historial de eventos).
+- ☐ Stock por venta (descuento en `createOrder`, reposición por cancelación).
 
-## FASE 6 — Checkout (pendiente)
+## FASE 5 — Panel administrativo restante (pendiente)
 
-- ☐ Formulario de invitado, zonas de entrega, confirmación.
+- ☐ Clientes derivados de pedidos.
+- ☐ Inventario: movimientos por venta y anulación.
 
-## FASE 7 — Panel administrativo restante (pendiente)
+## FASE 6 — Seguridad completa (pendiente)
 
-- ☐ Pedidos con historial, clientes, inventario por venta.
-
-## FASE 8 — Seguridad completa (pendiente)
-
-- ☐ Security Rules de pedidos/clientes con validadores y ataque sistemático.
+- ☐ Security Rules de pedidos/clientes/counters con validadores y ataque sistemático.
 - ☐ Índices confirmados en producción.
 
-## FASE 9 — Cierre del MVP (pendiente)
+## FASE 7 — Cierre del MVP (pendiente)
 
 - ☐ Datos reales, accesibilidad, rendimiento, despliegue.
