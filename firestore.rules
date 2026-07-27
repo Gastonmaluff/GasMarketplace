@@ -1,11 +1,272 @@
 rules_version = '2';
 
-// Baseline de arranque: denegación total.
-// Las reglas reales del MVP (catálogo público con active == true, pedidos solo
-// administración, validadores por colección) se desarrollarán en la fase de
-// seguridad del roadmap documentado en docs/ECOMMERCE-ARCHITECTURE.md.
+// ===============================================================
+// GasMarketplace — Reglas de Firestore (fase de catálogo)
+// ===============================================================
+//
+// Modelo asumido:
+//
+// settings/public   — configuración visible de la tienda (sin PII sensible).
+// settings/private  — preferencias internas del panel.
+// categories/{id}   — categorías; lectura pública solo con active == true.
+// categorySlugs/{slug}      — índice de unicidad { categoryId }.
+// products/{id}     — productos; lectura pública solo con active == true.
+// productSlugs/{slug}       — índice de unicidad { productId }.
+// productSkus/{sku}         — índice de unicidad { productId }.
+// productBarcodes/{code}    — índice de unicidad { productId }.
+// stockMovements/{id}       — ajustes de stock, inmutables una vez creados.
+// orders, customers, counters — NO habilitados todavía (default deny).
+//
+// Principios: default deny; administración exclusivamente por custom claim
+// admin == true (asignado con Admin SDK, nunca escribible por clientes);
+// esquema estricto con hasOnly; createdAt/createdBy inmutables; updatedAt
+// y updatedBy validados contra request.time y el uid autenticado.
+//
+// Límite conocido: las reglas no pueden iterar arrays, por lo que el
+// contenido interno de deliveryZones e images se valida en el cliente y
+// solo su tamaño acá; ambas colecciones son de escritura exclusiva admin.
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ------------------------- Helpers -------------------------
+
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function auditedNow() {
+      return incoming().updatedAt == request.time &&
+        incoming().updatedBy == request.auth.uid;
+    }
+
+    function createdNow() {
+      return incoming().createdAt == request.time &&
+        incoming().createdBy == request.auth.uid;
+    }
+
+    function createdImmutable() {
+      return incoming().createdAt == resource.data.createdAt &&
+        incoming().createdBy == resource.data.createdBy;
+    }
+
+    function boundedString(value, maxLength) {
+      return value is string && value.size() <= maxLength;
+    }
+
+    function requiredString(value, maxLength) {
+      return value is string && value.size() > 0 && value.size() <= maxLength;
+    }
+
+    function intBetween(value, minValue, maxValue) {
+      return value is int && value >= minValue && value <= maxValue;
+    }
+
+    function nullOrIntBetween(value, minValue, maxValue) {
+      return value == null || intBetween(value, minValue, maxValue);
+    }
+
+    function validSlug(value) {
+      return value is string && value.matches('[a-z0-9]+(-[a-z0-9]+)*') &&
+        value.size() <= 80;
+    }
+
+    // ----------------------- settings ------------------------
+
+    function isValidPublicSettings() {
+      return incoming().keys().hasOnly([
+          'storeName', 'storeDescription', 'whatsappNumberDisplay',
+          'whatsappNumberNormalized', 'supportEmail', 'address', 'city',
+          'country', 'currency', 'locale', 'timezone', 'pickupEnabled',
+          'deliveryEnabled', 'acceptedPaymentMethods', 'deliveryZones',
+          'orderConfirmationMessage', 'active', 'updatedAt', 'updatedBy'
+        ]) &&
+        requiredString(incoming().storeName, 80) &&
+        boundedString(incoming().storeDescription, 500) &&
+        boundedString(incoming().whatsappNumberDisplay, 30) &&
+        boundedString(incoming().whatsappNumberNormalized, 20) &&
+        boundedString(incoming().supportEmail, 120) &&
+        boundedString(incoming().address, 200) &&
+        boundedString(incoming().city, 80) &&
+        boundedString(incoming().country, 60) &&
+        incoming().currency == 'PYG' &&
+        incoming().locale == 'es-PY' &&
+        incoming().timezone == 'America/Asuncion' &&
+        incoming().pickupEnabled is bool &&
+        incoming().deliveryEnabled is bool &&
+        incoming().acceptedPaymentMethods is list &&
+        incoming().acceptedPaymentMethods.size() >= 1 &&
+        incoming().acceptedPaymentMethods.size() <= 3 &&
+        incoming().acceptedPaymentMethods.hasOnly(['cash', 'bank_transfer', 'pay_on_pickup']) &&
+        incoming().deliveryZones is list &&
+        incoming().deliveryZones.size() <= 20 &&
+        boundedString(incoming().orderConfirmationMessage, 500) &&
+        incoming().active is bool &&
+        auditedNow();
+    }
+
+    function isValidPrivateSettings() {
+      return incoming().keys().hasOnly([
+          'internalOrderNotificationEmails', 'defaultLowStockThreshold',
+          'allowNegativeStock', 'updatedAt', 'updatedBy'
+        ]) &&
+        incoming().internalOrderNotificationEmails is list &&
+        incoming().internalOrderNotificationEmails.size() <= 10 &&
+        intBetween(incoming().defaultLowStockThreshold, 0, 100000) &&
+        incoming().allowNegativeStock is bool &&
+        auditedNow();
+    }
+
+    match /settings/public {
+      // Lectura pública únicamente de este documento exacto (storefront).
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidPublicSettings();
+      allow delete: if false;
+    }
+
+    match /settings/private {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidPrivateSettings();
+      allow delete: if false;
+    }
+
+    // ----------------------- categories ----------------------
+
+    function isValidCategory() {
+      return incoming().keys().hasOnly([
+          'name', 'normalizedName', 'slug', 'description', 'imageUrl',
+          'imagePath', 'order', 'active', 'createdAt', 'createdBy',
+          'updatedAt', 'updatedBy'
+        ]) &&
+        requiredString(incoming().name, 80) &&
+        boundedString(incoming().normalizedName, 80) &&
+        validSlug(incoming().slug) &&
+        boundedString(incoming().description, 500) &&
+        boundedString(incoming().imageUrl, 2048) &&
+        boundedString(incoming().imagePath, 300) &&
+        intBetween(incoming().order, 0, 10000) &&
+        incoming().active is bool &&
+        auditedNow();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isAdmin() || resource.data.active == true;
+      allow create: if isAdmin() && isValidCategory() && createdNow();
+      allow update: if isAdmin() && isValidCategory() && createdImmutable();
+      allow delete: if isAdmin();
+    }
+
+    match /categorySlugs/{slug} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() &&
+        incoming().keys().hasOnly(['categoryId']) &&
+        requiredString(incoming().categoryId, 100);
+      allow delete: if isAdmin();
+    }
+
+    // ------------------------ products -----------------------
+
+    function isValidProduct() {
+      return incoming().keys().hasOnly([
+          'name', 'normalizedName', 'slug', 'shortDescription', 'description',
+          'sku', 'barcode', 'categoryIds', 'primaryCategoryId', 'price',
+          'compareAtPrice', 'costPrice', 'stock', 'lowStockThreshold',
+          'trackStock', 'allowBackorder', 'images', 'featured', 'active',
+          'searchTokens', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'
+        ]) &&
+        requiredString(incoming().name, 120) &&
+        boundedString(incoming().normalizedName, 120) &&
+        validSlug(incoming().slug) &&
+        boundedString(incoming().shortDescription, 200) &&
+        boundedString(incoming().description, 5000) &&
+        boundedString(incoming().sku, 60) &&
+        boundedString(incoming().barcode, 60) &&
+        incoming().categoryIds is list &&
+        incoming().categoryIds.size() <= 5 &&
+        boundedString(incoming().primaryCategoryId, 100) &&
+        (incoming().primaryCategoryId == '' ||
+          incoming().categoryIds.hasAny([incoming().primaryCategoryId])) &&
+        intBetween(incoming().price, 0, 1000000000) &&
+        (incoming().compareAtPrice == null ||
+          (incoming().compareAtPrice is int &&
+            incoming().compareAtPrice > incoming().price &&
+            incoming().compareAtPrice <= 1000000000)) &&
+        nullOrIntBetween(incoming().costPrice, 0, 1000000000) &&
+        intBetween(incoming().stock, -1000000, 1000000) &&
+        nullOrIntBetween(incoming().lowStockThreshold, 0, 100000) &&
+        incoming().trackStock is bool &&
+        incoming().allowBackorder is bool &&
+        incoming().images is list &&
+        incoming().images.size() <= 10 &&
+        incoming().featured is bool &&
+        incoming().active is bool &&
+        incoming().searchTokens is list &&
+        incoming().searchTokens.size() <= 30 &&
+        auditedNow();
+    }
+
+    match /products/{productId} {
+      allow read: if isAdmin() || resource.data.active == true;
+      allow create: if isAdmin() && isValidProduct() && createdNow();
+      allow update: if isAdmin() && isValidProduct() && createdImmutable();
+      allow delete: if isAdmin();
+    }
+
+    function isValidProductIndex() {
+      return incoming().keys().hasOnly(['productId']) &&
+        requiredString(incoming().productId, 100);
+    }
+
+    match /productSlugs/{slug} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidProductIndex();
+      allow delete: if isAdmin();
+    }
+
+    match /productSkus/{sku} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidProductIndex();
+      allow delete: if isAdmin();
+    }
+
+    match /productBarcodes/{barcode} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidProductIndex();
+      allow delete: if isAdmin();
+    }
+
+    // --------------------- stockMovements --------------------
+
+    function isValidStockMovement() {
+      return incoming().keys().hasOnly([
+          'productId', 'type', 'quantity', 'previousStock', 'resultingStock',
+          'reason', 'createdAt', 'createdBy'
+        ]) &&
+        requiredString(incoming().productId, 100) &&
+        incoming().type == 'ajuste' &&
+        incoming().quantity is int &&
+        incoming().quantity != 0 &&
+        intBetween(incoming().previousStock, -1000000, 1000000) &&
+        intBetween(incoming().resultingStock, -1000000, 1000000) &&
+        incoming().resultingStock == incoming().previousStock + incoming().quantity &&
+        requiredString(incoming().reason, 300) &&
+        createdNow();
+    }
+
+    match /stockMovements/{movementId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && isValidStockMovement();
+      // Los movimientos son un registro histórico: nunca se editan ni borran.
+      allow update, delete: if false;
+    }
+
+    // ----------------------- default deny --------------------
+    // orders, customers y counters permanecen cerrados hasta sus fases.
+
     match /{document=**} {
       allow read, write: if false;
     }

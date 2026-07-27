@@ -29,11 +29,15 @@ Todo terminado.
 - ✓ Rutas protegidas (`AdminGuard`).
 - ✓ Sesión, logout y recuperación.
 
-## FASE 3 — Catálogo público (pendiente)
+## FASE 3 — Catálogo
 
-- ☐ Tipos de dominio y utilidades puras (tokens de búsqueda, totales).
-- ☐ Módulo `catalog`: inicio, catálogo, categorías, búsqueda y ficha.
-- ☐ Datos de prueba en el emulador.
+- ✓ StoreSettings (configuración pública/privada, zonas de entrega).
+- ✓ Categorías (CRUD administrativo, slugs únicos, imágenes).
+- ✓ Productos (CRUD administrativo, unicidad slug/SKU/barcode, precios PYG).
+- ✓ Imágenes (Storage, principal, orden, límites y limpieza).
+- ✓ Stock básico (trackStock, allowBackorder, umbrales, ajustes con movimientos).
+- ✓ Security Rules de catálogo con pruebas contra el emulador.
+- ○ Catálogo público (inicio, catálogo, categorías, búsqueda, ficha).
 
 ## FASE 4 — Carrito (pendiente)
 
@@ -47,14 +51,14 @@ Todo terminado.
 
 - ☐ Formulario de invitado, zonas de entrega, confirmación.
 
-## FASE 7 — Panel administrativo (pendiente)
+## FASE 7 — Panel administrativo restante (pendiente)
 
-- ☐ Productos, categorías, pedidos con historial, clientes, stock, configuración.
+- ☐ Pedidos con historial, clientes, inventario por venta.
 
-## FASE 8 — Seguridad (pendiente)
+## FASE 8 — Seguridad completa (pendiente)
 
-- ☐ Security Rules completas con validadores, ataque sistemático y auditoría.
-- ☐ Índices confirmados.
+- ☐ Security Rules de pedidos/clientes con validadores y ataque sistemático.
+- ☐ Índices confirmados en producción.
 
 ## FASE 9 — Cierre del MVP (pendiente)
 
