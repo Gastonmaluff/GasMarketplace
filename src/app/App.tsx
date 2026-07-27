@@ -27,6 +27,12 @@ const AdminLoginPage = lazy(() =>
 const AdminSettingsPage = lazy(() =>
   import('../modules/store-settings').then((module) => ({ default: module.AdminSettingsPage })),
 );
+const AdminCategoriesPage = lazy(() =>
+  import('../modules/catalog').then((module) => ({ default: module.AdminCategoriesPage })),
+);
+const AdminCategoryFormPage = lazy(() =>
+  import('../modules/catalog').then((module) => ({ default: module.AdminCategoryFormPage })),
+);
 
 export function AppRoutes() {
   return (
@@ -45,6 +51,9 @@ export function AppRoutes() {
           <Route element={<AdminLayout />}>
             <Route path="admin" element={<AdminHomePage />} />
             <Route path="admin/configuracion" element={<AdminSettingsPage />} />
+            <Route path="admin/categorias" element={<AdminCategoriesPage />} />
+            <Route path="admin/categorias/nueva" element={<AdminCategoryFormPage />} />
+            <Route path="admin/categorias/:id" element={<AdminCategoryFormPage />} />
           </Route>
         </Route>
       </Routes>

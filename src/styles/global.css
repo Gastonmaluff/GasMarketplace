@@ -1862,3 +1862,48 @@ html[data-density='compact'] {
   color: var(--color-muted);
   font-size: 0.9rem;
 }
+.admin-page--wide {
+  max-width: none;
+}
+.list-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 380px) minmax(160px, 220px);
+  gap: 1rem;
+  align-items: end;
+}
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+.cell-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.cell-title small {
+  display: block;
+  color: var(--color-muted);
+}
+.cell-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+@media (max-width: 760px) {
+  .list-toolbar {
+    grid-template-columns: 1fr;
+  }
+  .row-actions {
+    justify-content: flex-start;
+  }
+}

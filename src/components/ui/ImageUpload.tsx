@@ -9,6 +9,14 @@ interface ImageUploadProps {
   acceptedTypes?: readonly string[];
   label?: string;
   maxSizeBytes?: number;
+  /** Notifica el archivo local seleccionado (o null al quitarlo). */
+  onFileSelect?: (file: File | null) => void;
+  /** Imagen remota ya guardada, mostrada mientras no haya selección local. */
+  imageUrl?: string;
+  /** Pedido de quitar la imagen remota existente. */
+  onRemoveExisting?: () => void;
+  /** Progreso de subida 0-100; null u undefined cuando no hay subida activa. */
+  progress?: number | null;
 }
 
 function formatMegabytes(bytes: number): string {
@@ -17,8 +25,12 @@ function formatMegabytes(bytes: number): string {
 
 export function ImageUpload({
   acceptedTypes = defaultAcceptedTypes,
+  imageUrl,
   label = 'Seleccionar imagen',
   maxSizeBytes = 5 * 1024 * 1024,
+  onFileSelect,
+  onRemoveExisting,
+  progress,
 }: ImageUploadProps) {
   const inputId = useId();
   const errorId = `${inputId}-error`;
@@ -47,6 +59,7 @@ export function ImageUpload({
     setError(undefined);
     setProcessing(false);
     clearInput();
+    onFileSelect?.(null);
   };
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -71,26 +84,34 @@ export function ImageUpload({
       if (currentUrl) URL.revokeObjectURL(currentUrl);
       return URL.createObjectURL(file);
     });
+    onFileSelect?.(file);
   };
 
   const acceptedLabel = acceptedTypes.map((type) => type.split('/')[1]?.toUpperCase()).join(', ');
+  const displayUrl = previewUrl ?? imageUrl;
+  const uploading = typeof progress === 'number';
 
   return (
     <div className="image-upload">
-      {previewUrl ? (
+      {displayUrl ? (
         <div className="image-upload__preview">
           <img
-            alt={`Vista previa de ${fileName ?? 'imagen seleccionada'}`}
+            alt={`Vista previa de ${fileName ?? 'imagen guardada'}`}
             onError={() => {
               setError('No pudimos procesar la imagen seleccionada.');
               setProcessing(false);
             }}
             onLoad={() => setProcessing(false)}
-            src={previewUrl}
+            src={displayUrl}
           />
-          {processing ? (
+          {processing && previewUrl ? (
             <div className="image-upload__processing" role="status">
               <span aria-hidden="true" className="spinner" /> Procesando imagen
+            </div>
+          ) : null}
+          {uploading ? (
+            <div aria-live="polite" className="image-upload__processing" role="status">
+              Subiendo {Math.round(progress)}%
             </div>
           ) : null}
         </div>
@@ -123,10 +144,21 @@ export function ImageUpload({
             <label className="button button--ghost button--small" htmlFor={inputId}>
               Cambiar imagen
             </label>
-            <Button onClick={removeImage} size="small" variant="danger">
+            <Button disabled={uploading} onClick={removeImage} size="small" variant="danger">
               Eliminar imagen
             </Button>
           </div>
+        </div>
+      ) : displayUrl ? (
+        <div className="image-upload__actions">
+          <label className="button button--ghost button--small" htmlFor={inputId}>
+            Cambiar imagen
+          </label>
+          {onRemoveExisting ? (
+            <Button disabled={uploading} onClick={onRemoveExisting} size="small" variant="danger">
+              Quitar imagen
+            </Button>
+          ) : null}
         </div>
       ) : null}
       {error ? (
