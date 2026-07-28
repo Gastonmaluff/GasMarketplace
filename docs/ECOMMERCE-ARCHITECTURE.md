@@ -66,6 +66,7 @@ normalizada `+595…` por separado (regla 18).
 
 ```
 products/{productId}              lectura pública solo con active == true
+productPrivate/{productId}        costo, proveedor y notas internas; solo admin
 productSlugs/{slug}               índice de unicidad { productId } — solo admin
 productSkus/{sku}                 índice de unicidad { productId } — solo admin
 productBarcodes/{barcode}         índice de unicidad { productId } — solo admin
@@ -100,6 +101,9 @@ Decisiones estructurales:
   `lowStockThreshold`); cada ajuste manual escribe el nuevo stock y un `stockMovements` de tipo
   `ajuste` en una única transacción, con `previousStock`/`resultingStock` consistentes. Los
   descuentos por venta y las reposiciones por cancelación llegan con la fase de pedidos.
+- Los campos internos del producto viven en `productPrivate/{productId}` (`costPrice`,
+  `supplierName`, `internalNotes`). El documento público `products/{productId}` no almacena datos de
+  margen, proveedor ni notas privadas, aunque el panel admin los cargue junto al producto.
 - Búsqueda: Firestore no ofrece full-text. El MVP usa `searchTokens[]` (tokens en minúsculas
   derivados del nombre y los códigos, generados siempre en el servicio y nunca aceptados del
   formulario) con `array-contains`. Si queda corto, se integrará un buscador externo sin afectar a
@@ -173,10 +177,9 @@ detalles internos de administración). Precisiones de implementación:
   afectar al storefront.
 - **Lectura pública de `settings/public`** mediante `loadPublicStoreSettings()`, que no exige sesión
   y cae a defaults seguros; el storefront nunca lee `settings/private`.
-- **Campos internos** (`costPrice`, `lowStockThreshold`, `createdBy`, `updatedBy`) no se muestran. Se
-  mantiene la limitación conocida de Firestore: las reglas aplican a documentos completos, por lo que
-  un producto activo es legible entero; la separación público/privado a nivel de documento se
-  evaluará si algún campo interno debe dejar de viajar al cliente.
+- **Campos internos** (`costPrice`, proveedor y notas) se leen desde `productPrivate/{productId}`,
+  colección exclusiva para administradores. El storefront solo consulta `products`, donde permanecen
+  los campos necesarios para listados, ficha, disponibilidad y búsqueda.
 
 ## Flujo del carrito
 

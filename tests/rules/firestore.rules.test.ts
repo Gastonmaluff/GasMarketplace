@@ -67,7 +67,6 @@ function validProduct(uid: string) {
     primaryCategoryId: '',
     price: 25000,
     compareAtPrice: null,
-    costPrice: null,
     stock: 10,
     lowStockThreshold: null,
     trackStock: true,
@@ -76,6 +75,19 @@ function validProduct(uid: string) {
     featured: false,
     active: true,
     searchTokens: ['yerba', 'mate'],
+    createdAt: serverTimestamp(),
+    createdBy: uid,
+    updatedAt: serverTimestamp(),
+    updatedBy: uid,
+  };
+}
+
+function validProductPrivate(uid: string, productId = 'ok') {
+  return {
+    productId,
+    costPrice: 18000,
+    supplierName: 'Proveedor demo',
+    internalNotes: 'Solo visible para administradores.',
     createdAt: serverTimestamp(),
     createdBy: uid,
     updatedAt: serverTimestamp(),
@@ -255,6 +267,12 @@ describe('products', () => {
       setDoc(doc(adminDb(), 'products/neg'), { ...validProduct(ADMIN_UID), price: -1 }),
     );
     await assertFails(
+      setDoc(doc(adminDb(), 'products/private-field'), {
+        ...validProduct(ADMIN_UID),
+        costPrice: 1000,
+      }),
+    );
+    await assertFails(
       setDoc(doc(adminDb(), 'products/cmp'), {
         ...validProduct(ADMIN_UID),
         compareAtPrice: 20000,
@@ -278,6 +296,25 @@ describe('products', () => {
     await assertSucceeds(setDoc(doc(adminDb(), 'productSlugs/yerba'), { productId: 'p1' }));
     await assertFails(setDoc(doc(plainDb(), 'productSlugs/otro'), { productId: 'p1' }));
     await assertFails(getDoc(doc(visitorDb(), 'productSlugs/yerba')));
+  });
+
+  it('productPrivate es solo administrativo y exige coincidir con el productId', async () => {
+    await assertSucceeds(
+      setDoc(doc(adminDb(), 'productPrivate/ok'), validProductPrivate(ADMIN_UID, 'ok')),
+    );
+    await assertFails(getDoc(doc(visitorDb(), 'productPrivate/ok')));
+    await assertFails(
+      setDoc(doc(plainDb(), 'productPrivate/x'), validProductPrivate(PLAIN_UID, 'x')),
+    );
+    await assertFails(
+      setDoc(doc(adminDb(), 'productPrivate/mismatch'), validProductPrivate(ADMIN_UID, 'otro')),
+    );
+    await assertFails(
+      setDoc(doc(adminDb(), 'productPrivate/extra'), {
+        ...validProductPrivate(ADMIN_UID, 'extra'),
+        visible: true,
+      }),
+    );
   });
 });
 

@@ -49,7 +49,7 @@ Todo terminado.
 - ✓ Preview `storefront-review` publicada (Hosting preview channel).
 - ✓ Verificación pública (rutas, responsive, consola, seguridad).
 - ✓ Rediseño visual "Mercado 48" del storefront (paleta teal/crema, home, listados, ficha).
-- ○ Separar datos públicos y privados del producto (`products` / `productPrivate`).
+- ✓ Separar datos públicos y privados del producto (`products` / `productPrivate`).
 - ○ Publicar canal live.
 - ○ Conectar dominio definitivo.
 

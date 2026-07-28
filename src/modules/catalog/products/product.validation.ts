@@ -6,6 +6,7 @@ import {
   MAX_PRODUCT_CATEGORIES,
   MAX_PRODUCT_IMAGES,
   MAX_PRODUCT_NAME_LENGTH,
+  MAX_PRIVATE_FIELD_LENGTH,
   MAX_SHORT_DESCRIPTION_LENGTH,
   MAX_STOCK,
   type EditableProductImage,
@@ -60,6 +61,12 @@ export function validateProductDraft(
 
   if (draft.costPrice !== null && (!Number.isInteger(draft.costPrice) || draft.costPrice < 0)) {
     errors.push('El costo interno debe ser un entero mayor o igual a 0.');
+  }
+  if (draft.supplierName.length > 160) {
+    errors.push('El proveedor no puede superar 160 caracteres.');
+  }
+  if (draft.internalNotes.length > MAX_PRIVATE_FIELD_LENGTH) {
+    errors.push(`Las notas internas no pueden superar ${MAX_PRIVATE_FIELD_LENGTH} caracteres.`);
   }
 
   if (draft.stock === null || !Number.isInteger(draft.stock)) {

@@ -358,8 +358,6 @@ async function main() {
       primaryCategoryId: p.cat,
       price: p.price,
       compareAtPrice: p.compareAtPrice ?? null,
-      // Sin costPrice: nunca se siembran datos internos en la preview.
-      costPrice: null,
       stock: p.stock,
       lowStockThreshold: null,
       trackStock: true,

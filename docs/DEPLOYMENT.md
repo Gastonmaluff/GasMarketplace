@@ -81,6 +81,19 @@ npm run seed:staging
 - Imágenes: SVG generados localmente como data URI (sin descargas externas, sin Storage). Datos 100%
   ficticios; **nunca** `costPrice` ni información sensible.
 
+## Migración productPrivate (staging)
+
+```bash
+npm run migrate:staging:product-private
+npm run migrate:staging:product-private -- --apply
+```
+
+- Idempotente y con guardas: aborta si el projectId no contiene `staging` o si apunta a
+  `gasmarketplace-65156`.
+- Mueve `costPrice` desde `products/{productId}` hacia `productPrivate/{productId}` y elimina el
+  campo del documento público.
+- `productPrivate` es legible/escribible solo por administradores según las Security Rules.
+
 ### Limpiar y volver a sembrar
 
 Los datos de staging se limpian desde la consola de Firebase del proyecto staging
@@ -144,31 +157,38 @@ expiración, directorio `dist`, que **NO** es el canal live, y que producción n
 - Nunca `firebase deploy` a secas.
 - El canal **live** de Hosting NO se publica en este flujo.
 
-## ⚠️ Requisito antes de producción: separar datos públicos y privados del producto
+## Datos públicos y privados del producto
 
-Firestore entrega **documentos completos**. Hoy `products/{id}` es legible por cualquiera cuando
-`active == true`, así que campos internos (por ejemplo `costPrice`, márgenes, notas internas) serían
-visibles por inspección de red aunque la interfaz no los muestre.
-
-En la preview esto **no** es un problema porque los datos son ficticios y el seed nunca carga
-`costPrice` ni información sensible. **Antes de publicar producción con datos reales**, hay que
-separar:
+Firestore entrega **documentos completos**. Por eso `products/{id}` contiene solo datos públicos, y
+los campos internos se guardan aparte:
 
 ```
 products/{productId}         → datos públicos (nombre, precio, imágenes, stock, etc.)
 productPrivate/{productId}   → costo y datos administrativos (solo admin)
 ```
 
-con reglas que restrinjan `productPrivate` a administradores. Este cambio no bloquea la preview, pero
-es obligatorio antes de exponer datos comerciales reales.
+Las reglas rechazan escrituras que intenten volver a guardar `costPrice` en `products`.
+
+## Administrador de staging
+
+1. Habilitar Email/Password en Firebase Console del proyecto `gasmarketplace-staging-7c3a`.
+2. Crear el usuario administrador desde Firebase Console.
+3. Asignar el claim con credenciales privilegiadas locales:
+
+```bash
+cd functions
+node scripts/set-admin-claim.cjs admin@example.com --project gasmarketplace-staging-7c3a
+```
+
+El script exige `--project` explícito. Si se usa contra producción, además exige
+`--confirm-production`.
 
 ## Procedimiento futuro para producción (pendiente)
 
-1. Implementar la separación público/privado del producto (arriba).
-2. Completar las fases de venta (carrito, checkout, `createOrder`, pedidos) y su seguridad.
-3. Desplegar reglas/índices a `production` (`--project production`), con pruebas de reglas.
-4. `firebase deploy --only hosting --project production` para publicar el canal **live**.
-5. Verificar exhaustivamente antes de anunciar.
+1. Completar las fases de venta (carrito, checkout, `createOrder`, pedidos) y su seguridad.
+2. Desplegar reglas/índices a `production` (`--project production`), con pruebas de reglas.
+3. `firebase deploy --only hosting --project production` para publicar el canal **live**.
+4. Verificar exhaustivamente antes de anunciar.
 
 ## Procedimiento futuro para dominio propio (pendiente)
 

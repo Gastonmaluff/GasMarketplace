@@ -16,6 +16,8 @@ const validDraft: ProductDraft = {
   price: 25000,
   compareAtPrice: null,
   costPrice: null,
+  supplierName: '',
+  internalNotes: '',
   stock: 5,
   lowStockThreshold: null,
   trackStock: true,
