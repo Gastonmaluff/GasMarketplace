@@ -40,11 +40,6 @@ function formatDate(millis?: number): string {
   }).format(new Date(millis));
 }
 
-function formatPercent(value: number, total: number): string {
-  if (total === 0) return '0%';
-  return `${Math.round((value / total) * 100)}%`;
-}
-
 export function AdminProductsPage() {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[] | null>(null);
@@ -109,7 +104,6 @@ export function AdminProductsPage() {
   const productStats = useMemo(() => {
     const allProducts = products ?? [];
     const total = allProducts.length;
-    const active = allProducts.filter((product) => product.active).length;
     const featured = allProducts.filter((product) => product.featured).length;
     const lowStock = allProducts.filter((product) =>
       isLowStock(product, DEFAULT_LOW_STOCK_THRESHOLD),
@@ -118,17 +112,8 @@ export function AdminProductsPage() {
       (sum, product) => sum + (product.trackStock ? Math.max(product.stock, 0) * product.price : 0),
       0,
     );
-    return { active, featured, inventoryValue, lowStock, total };
+    return { featured, inventoryValue, lowStock, total };
   }, [products]);
-
-  const lowStockAlerts = useMemo(
-    () =>
-      (products ?? [])
-        .filter((product) => product.trackStock && product.stock <= DEFAULT_LOW_STOCK_THRESHOLD)
-        .sort((first, second) => first.stock - second.stock)
-        .slice(0, 4),
-    [products],
-  );
 
   async function toggleActive(product: Product) {
     setBusyId(product.id);
@@ -412,103 +397,6 @@ export function AdminProductsPage() {
             />
           </section>
         </div>
-
-        <aside className="admin-products-aside" aria-label="Resumen lateral de catálogo">
-          <section className="admin-side-card">
-            <div className="admin-side-card__head">
-              <div>
-                <h2>Resumen del catálogo</h2>
-                <p>Estado actual</p>
-              </div>
-              <Icon name="bell" size={18} />
-            </div>
-            <div className="catalog-donut" aria-hidden="true">
-              <span>{productStats.total}</span>
-            </div>
-            <div className="catalog-breakdown">
-              <span>
-                <i className="catalog-breakdown__dot catalog-breakdown__dot--active" />
-                Activos {productStats.active} (
-                {formatPercent(productStats.active, productStats.total)})
-              </span>
-              <span>
-                <i className="catalog-breakdown__dot catalog-breakdown__dot--featured" />
-                Destacados {productStats.featured} (
-                {formatPercent(productStats.featured, productStats.total)})
-              </span>
-              <span>
-                <i className="catalog-breakdown__dot catalog-breakdown__dot--muted" />
-                Inactivos {productStats.total - productStats.active} (
-                {formatPercent(productStats.total - productStats.active, productStats.total)})
-              </span>
-            </div>
-          </section>
-
-          <section className="admin-side-card">
-            <div className="admin-side-card__head">
-              <div>
-                <h2>Alertas de stock bajo</h2>
-                <p>Primeros productos a revisar</p>
-              </div>
-            </div>
-            <div className="stock-alert-list">
-              {lowStockAlerts.length > 0 ? (
-                lowStockAlerts.map((product) => {
-                  const primaryImage =
-                    product.images.find((image) => image.isPrimary) ?? product.images[0];
-                  return (
-                    <Link
-                      className="stock-alert-item"
-                      key={product.id}
-                      to={`/admin/productos/${product.id}`}
-                    >
-                      {primaryImage ? (
-                        <img alt="" src={primaryImage.url} />
-                      ) : (
-                        <span>
-                          <Icon name="box" size={16} />
-                        </span>
-                      )}
-                      <span>
-                        <strong>{product.name}</strong>
-                        <small>Stock: {product.stock} unidades</small>
-                      </span>
-                    </Link>
-                  );
-                })
-              ) : (
-                <p className="admin-page__note">Sin alertas por ahora.</p>
-              )}
-            </div>
-          </section>
-
-          <section className="admin-side-card">
-            <div className="admin-side-card__head">
-              <div>
-                <h2>Acciones rápidas</h2>
-                <p>Atajos del catálogo</p>
-              </div>
-            </div>
-            <div className="quick-action-list">
-              <Link to="/admin/productos/nuevo">
-                <Icon name="plus" size={16} />
-                Nuevo producto
-              </Link>
-              <Link to="/admin/categorias">
-                <Icon name="tag" size={16} />
-                Gestionar categorías
-              </Link>
-              <button onClick={() => setFeaturedOnly((current) => !current)} type="button">
-                <Icon name="star" size={16} />
-                Ver destacados
-              </button>
-              <button onClick={() => setLowStockOnly((current) => !current)} type="button">
-                <Icon name="filter" size={16} />
-                Ver stock bajo
-              </button>
-            </div>
-          </section>
-        </aside>
       </div>
       {loadError ? (
         <Button onClick={reload} variant="secondary">
