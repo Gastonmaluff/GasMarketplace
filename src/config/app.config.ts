@@ -5,7 +5,7 @@ export const appConfig = {
   description: 'Tienda web para compra de mercaderías.',
   branding: {
     logoFull: '/brand/mercado48-logo-header.webp',
-    logoCompact: '/brand/mercado48-logo-header.webp',
+    logoCompact: '/brand/mercado48-app-icon.png',
   },
   theme: {
     primary: '#17635c',
