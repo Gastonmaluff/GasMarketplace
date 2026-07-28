@@ -12,8 +12,6 @@ interface StorefrontHeaderProps {
   categories: Category[];
 }
 
-const BRAND_TAGLINE = 'Lo pedís hoy, lo tenés en 48 horas.';
-
 export function StorefrontHeader({ categories, settings }: StorefrontHeaderProps) {
   const navigate = useNavigate();
   const [term, setTerm] = useState('');
@@ -58,7 +56,7 @@ export function StorefrontHeader({ categories, settings }: StorefrontHeaderProps
             <Icon name={menuOpen ? 'close' : 'menu'} />
           </button>
 
-          <Brand48 storeName={storeName} tagline={BRAND_TAGLINE} />
+          <Brand48 storeName={storeName} />
 
           <form className="store-search" onSubmit={submitSearch} role="search">
             <label className="sr-only" htmlFor="store-search-input">

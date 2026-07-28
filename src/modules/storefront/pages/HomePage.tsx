@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { appConfig } from '../../../config/app.config';
 import { listActiveProducts, type Product } from '../../catalog';
 import { CategoryCard } from '../components/CategoryCard';
-import { HeroArt } from '../components/HeroArt';
 import { ProductGrid } from '../components/ProductGrid';
 import { useStorefrontContext } from '../hooks/storefront-context';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
@@ -50,9 +49,7 @@ export function HomePage() {
             Ver ofertas destacadas <span aria-hidden="true">→</span>
           </Link>
         </div>
-        <div className="hero__media">
-          <HeroArt />
-        </div>
+        <div aria-hidden="true" className="hero__media" />
       </section>
 
       {categories.length > 0 ? (

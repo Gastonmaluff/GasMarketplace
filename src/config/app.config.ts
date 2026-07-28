@@ -4,8 +4,8 @@ export const appConfig = {
   name: 'GasMarket',
   description: 'Tienda web para compra de mercaderías.',
   branding: {
-    logoFull: '/favicon.svg',
-    logoCompact: '/favicon.svg',
+    logoFull: '/brand/mercado48-logo-header.webp',
+    logoCompact: '/brand/mercado48-logo-header.webp',
   },
   theme: {
     primary: '#17635c',

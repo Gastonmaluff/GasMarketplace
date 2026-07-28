@@ -6,6 +6,11 @@
   --color-primary-tint: #e3ede9;
   --color-primary-soft: #d3e3dd;
   --color-secondary: #0f4a44;
+  --brand-teal: var(--color-primary);
+  --brand-teal-dark: var(--color-primary-dark);
+  --brand-teal-hover: var(--color-primary-strong);
+  --brand-cream: var(--color-cream);
+  --brand-charcoal: var(--color-heading);
   --color-accent-sale: #cf4632;
   --color-accent-sale-dark: #b23a29;
   --color-sidebar: #123a36;
