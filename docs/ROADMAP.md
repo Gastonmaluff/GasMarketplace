@@ -39,6 +39,19 @@ Todo terminado.
 - ✓ Security Rules de catálogo con pruebas contra el emulador.
 - ✓ Catálogo público (inicio, catálogo, categorías, búsqueda, ficha, galería, disponibilidad, SEO básico).
 
+## FASE 3.5 — Primera preview pública
+
+- ✓ Proyecto Firebase staging (`gasmarketplace-staging-7c3a`).
+- ✓ Aplicación web staging.
+- ✓ Firebase Hosting configurado (SPA rewrite, caché).
+- ✓ Datos demostrativos (seed idempotente con guardas de projectId).
+- ✓ Reglas e índices desplegados en staging.
+- ✓ Preview `storefront-review` publicada (Hosting preview channel).
+- ✓ Verificación pública (rutas, responsive, consola, seguridad).
+- ○ Separar datos públicos y privados del producto (`products` / `productPrivate`).
+- ○ Publicar canal live.
+- ○ Conectar dominio definitivo.
+
 ## FASE 4 — Venta (pendiente)
 
 - ☐ Carrito (`cart`) con persistencia local y revalidación.
