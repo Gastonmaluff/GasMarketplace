@@ -5,9 +5,9 @@ import { appConfig } from '../../../config/app.config';
 import { Alert } from '../../../components/ui/Alert';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { LoadingState } from '../../../components/ui/LoadingState';
-import { PageHeader } from '../../../components/ui/PageHeader';
 import { searchActiveProducts, type Product } from '../../catalog';
 import { ProductGrid } from '../components/ProductGrid';
+import { StoreBreadcrumbs } from '../components/StoreBreadcrumbs';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 
 const MAX_TERM_LENGTH = 80;
@@ -60,14 +60,19 @@ export function SearchPage() {
           : { status: 'ready', results: result.results };
 
   return (
-    <div className="store-search">
-      <PageHeader
-        breadcrumbs={[
-          { label: 'Inicio', href: '/' },
-          { label: 'Catálogo', href: '/catalogo' },
-        ]}
-        title={term ? `Resultados para "${term}"` : 'Buscar productos'}
-      />
+    <div className="store-listing">
+      <div className="store-listing__head">
+        <StoreBreadcrumbs
+          items={[
+            { label: 'Inicio', href: '/' },
+            { label: 'Catálogo', href: '/catalogo' },
+            { label: 'Buscar' },
+          ]}
+        />
+        <h1 className="store-listing__title">
+          {term ? `Resultados para "${term}"` : 'Buscar productos'}
+        </h1>
+      </div>
 
       {state.status === 'idle' ? (
         <EmptyState
@@ -82,9 +87,11 @@ export function SearchPage() {
       ) : state.status === 'loading' ? (
         <LoadingState label="Buscando productos" />
       ) : state.status === 'error' ? (
-        <Alert title="No pudimos completar la búsqueda" tone="danger">
-          Intentá nuevamente en un momento.
-        </Alert>
+        <div className="store-state">
+          <Alert title="No pudimos completar la búsqueda" tone="danger">
+            Intentá nuevamente en un momento.
+          </Alert>
+        </div>
       ) : state.results.length === 0 ? (
         <EmptyState
           action={

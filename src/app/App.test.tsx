@@ -14,7 +14,11 @@ describe('GasMarket storefront', () => {
       </MemoryRouter>,
     );
     expect(
-      await screen.findByRole('heading', { level: 1, name: /gasmarket/i }, { timeout: 25000 }),
+      await screen.findByRole(
+        'heading',
+        { level: 1, name: /en un solo lugar/i },
+        { timeout: 25000 },
+      ),
     ).toBeInTheDocument();
   }, 30000);
 

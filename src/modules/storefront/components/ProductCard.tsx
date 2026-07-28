@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
-import { Badge } from '../../../components/ui/Badge';
+import { Icon } from '../../../components/ui/Icon';
 import type { Product } from '../../catalog';
 import { getAvailability } from '../utils/availability';
 import { formatPrice, savingsPercent } from '../utils/format';
@@ -11,44 +11,60 @@ interface ProductCardProps {
   categoryName?: string;
 }
 
-/** Tarjeta pública de producto. No muestra costo, stock exacto ni datos internos. */
+/** Tarjeta de producto retail. No muestra costo, stock exacto ni datos internos. */
 export function ProductCard({ product, categoryName }: ProductCardProps) {
+  const navigate = useNavigate();
   const primaryImage = product.images.find((image) => image.isPrimary) ?? product.images[0] ?? null;
   const availability = getAvailability(product);
   const savings = savingsPercent(product.price, product.compareAtPrice);
+  const productPath = `/producto/${product.slug}`;
 
   return (
     <article className="product-card">
-      <Link className="product-card__link" to={`/producto/${product.slug}`}>
-        <div className="product-card__media">
+      {savings !== null ? <span className="product-card__discount">-{savings}%</span> : null}
+      <button
+        aria-label={`Agregar ${product.name} a favoritos`}
+        className="product-card__wish"
+        type="button"
+      >
+        <Icon name="heart" size={20} />
+      </button>
+
+      <Link className="product-card__link" to={productPath}>
+        <span className="product-card__media">
           <ProductImage
             alt={primaryImage?.alt || product.name}
             className="product-card__image"
             loading="lazy"
             src={primaryImage?.url}
           />
-          <div className="product-card__badges">
-            {product.featured ? <Badge tone="info">Destacado</Badge> : null}
-            {savings !== null ? <Badge tone="danger">-{savings}%</Badge> : null}
-          </div>
-        </div>
-        <div className="product-card__body">
-          {categoryName ? <p className="product-card__category">{categoryName}</p> : null}
+        </span>
+        <span className="product-card__body">
+          {product.featured ? <span className="product-card__flag">Destacado</span> : null}
+          {categoryName ? <span className="product-card__category">{categoryName}</span> : null}
           <h3 className="product-card__name">{product.name}</h3>
-          <div className="product-card__pricing">
-            <span className="product-card__price">{formatPrice(product.price)}</span>
-            {product.compareAtPrice ? (
-              <span className="product-card__compare">{formatPrice(product.compareAtPrice)}</span>
-            ) : null}
-          </div>
           <span
             className={`availability availability--${availability.status}`}
             data-testid="availability"
           >
             {availability.label}
           </span>
-        </div>
+          <span className="product-card__pricing">
+            {product.compareAtPrice ? (
+              <span className="product-card__compare">{formatPrice(product.compareAtPrice)}</span>
+            ) : null}
+            <span className="product-card__price">{formatPrice(product.price)}</span>
+          </span>
+        </span>
       </Link>
+
+      <button className="product-card__buy" onClick={() => navigate(productPath)} type="button">
+        <Icon name="cart" size={18} />
+        <span>
+          Comprar
+          <small>Pagás al recibir</small>
+        </span>
+      </button>
     </article>
   );
 }

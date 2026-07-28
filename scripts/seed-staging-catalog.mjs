@@ -287,9 +287,9 @@ async function main() {
   const token = await accessToken();
 
   await patchDoc(token, 'settings/public', {
-    storeName: 'GasMarket Demo',
+    storeName: 'Mercado 48',
     storeDescription:
-      'Tienda demostrativa de GasMarketplace. Datos ficticios para revisión visual (staging).',
+      'Lo pedís hoy, lo tenés en 48 horas. Datos demostrativos para revisión (staging).',
     whatsappNumberDisplay: '0981 000 000',
     whatsappNumberNormalized: '+595981000000',
     supportEmail: 'demo@gasmarket.example',

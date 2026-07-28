@@ -6,11 +6,11 @@ import { Alert } from '../../../components/ui/Alert';
 import { Button } from '../../../components/ui/Button';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { LoadingState } from '../../../components/ui/LoadingState';
-import { PageHeader } from '../../../components/ui/PageHeader';
 import { getActiveCategoryBySlug, type Category, type ProductSort } from '../../catalog';
 import { ProductGrid } from '../components/ProductGrid';
 import { ProductImage } from '../components/ProductImage';
 import { SortSelect } from '../components/SortSelect';
+import { StoreBreadcrumbs } from '../components/StoreBreadcrumbs';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { useProductList } from '../hooks/useProductList';
 import { StoreNotFoundPage } from './StoreNotFoundPage';
@@ -95,16 +95,26 @@ export function CategoryPage() {
   }
   if (state.status === 'error') {
     return (
-      <Alert title="No pudimos cargar la categoría" tone="danger">
-        Revisá tu conexión e intentá nuevamente.
-      </Alert>
+      <div className="store-state">
+        <Alert title="No pudimos cargar la categoría" tone="danger">
+          Revisá tu conexión e intentá nuevamente.
+        </Alert>
+      </div>
     );
   }
 
   const { category } = state;
 
   return (
-    <div className="store-category">
+    <div className="store-listing">
+      <StoreBreadcrumbs
+        items={[
+          { label: 'Inicio', href: '/' },
+          { label: 'Catálogo', href: '/catalogo' },
+          { label: category.name },
+        ]}
+      />
+
       <div className="category-hero">
         {category.imageUrl ? (
           <ProductImage
@@ -113,14 +123,10 @@ export function CategoryPage() {
             src={category.imageUrl}
           />
         ) : null}
-        <PageHeader
-          breadcrumbs={[
-            { label: 'Inicio', href: '/' },
-            { label: 'Catálogo', href: '/catalogo' },
-          ]}
-          title={category.name}
-        />
-        {category.description ? <p>{category.description}</p> : null}
+        <div>
+          <h1>{category.name}</h1>
+          {category.description ? <p>{category.description}</p> : null}
+        </div>
       </div>
 
       <div className="store-toolbar">
@@ -140,14 +146,14 @@ export function CategoryPage() {
       </div>
 
       {list.status === 'error' ? (
-        <>
+        <div className="store-state">
           <Alert title="No pudimos cargar los productos" tone="danger">
             Intentá nuevamente en un momento.
           </Alert>
           <Button onClick={list.reload} variant="secondary">
             Reintentar
           </Button>
-        </>
+        </div>
       ) : list.status === 'loading' ? (
         <LoadingState label="Cargando productos" />
       ) : list.products.length === 0 ? (
@@ -161,7 +167,7 @@ export function CategoryPage() {
           {list.hasMore ? (
             <div className="store-loadmore">
               <Button loading={list.loadingMore} onClick={list.loadMore} variant="secondary">
-                Cargar más
+                Cargar más productos
               </Button>
             </div>
           ) : null}

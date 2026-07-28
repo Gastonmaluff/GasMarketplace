@@ -5,10 +5,10 @@ import { Alert } from '../../../components/ui/Alert';
 import { Button } from '../../../components/ui/Button';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { LoadingState } from '../../../components/ui/LoadingState';
-import { PageHeader } from '../../../components/ui/PageHeader';
 import type { ProductSort } from '../../catalog';
 import { ProductGrid } from '../components/ProductGrid';
 import { SortSelect } from '../components/SortSelect';
+import { StoreBreadcrumbs } from '../components/StoreBreadcrumbs';
 import { useStorefrontContext } from '../hooks/storefront-context';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { useProductList } from '../hooks/useProductList';
@@ -54,14 +54,17 @@ export function CatalogPage() {
   }
 
   return (
-    <div className="store-catalog">
-      <PageHeader title="Catálogo" description="Todos los productos de la tienda." />
+    <div className="store-listing">
+      <div className="store-listing__head">
+        <StoreBreadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Catálogo' }]} />
+        <h1 className="store-listing__title">{featuredOnly ? 'Ofertas destacadas' : 'Catálogo'}</h1>
+        <p className="store-listing__subtitle">Todos los productos de la tienda.</p>
+      </div>
 
       <div className="store-toolbar">
-        <div className="text-field">
+        <div className="store-toolbar__field">
           <label htmlFor="catalog-category">Categoría</label>
           <select
-            className="text-field__input"
             id="catalog-category"
             onChange={(event) => updateParam('categoria', event.currentTarget.value)}
             value={categoryId}
@@ -77,33 +80,39 @@ export function CatalogPage() {
 
         <SortSelect onChange={(value) => updateParam('orden', value)} value={sort} />
 
-        <label className="checkbox-field">
-          <input
-            checked={availableOnly}
-            onChange={(event) => updateParam('disponible', event.currentTarget.checked ? '1' : '')}
-            type="checkbox"
-          />
-          <span>Solo disponibles</span>
-        </label>
-        <label className="checkbox-field">
-          <input
-            checked={featuredOnly}
-            onChange={(event) => updateParam('destacados', event.currentTarget.checked ? '1' : '')}
-            type="checkbox"
-          />
-          <span>Solo destacados</span>
-        </label>
+        <div className="store-toolbar__checks">
+          <label className="checkbox-field">
+            <input
+              checked={availableOnly}
+              onChange={(event) =>
+                updateParam('disponible', event.currentTarget.checked ? '1' : '')
+              }
+              type="checkbox"
+            />
+            <span>Solo disponibles</span>
+          </label>
+          <label className="checkbox-field">
+            <input
+              checked={featuredOnly}
+              onChange={(event) =>
+                updateParam('destacados', event.currentTarget.checked ? '1' : '')
+              }
+              type="checkbox"
+            />
+            <span>Solo ofertas</span>
+          </label>
+        </div>
       </div>
 
       {list.status === 'error' ? (
-        <>
+        <div className="store-state">
           <Alert title="No pudimos cargar el catálogo" tone="danger">
             Revisá tu conexión e intentá nuevamente.
           </Alert>
           <Button onClick={list.reload} variant="secondary">
             Reintentar
           </Button>
-        </>
+        </div>
       ) : list.status === 'loading' ? (
         <LoadingState label="Cargando productos" />
       ) : list.products.length === 0 ? (
@@ -117,7 +126,7 @@ export function CatalogPage() {
           {list.hasMore ? (
             <div className="store-loadmore">
               <Button loading={list.loadingMore} onClick={list.loadMore} variant="secondary">
-                Cargar más
+                Cargar más productos
               </Button>
             </div>
           ) : null}

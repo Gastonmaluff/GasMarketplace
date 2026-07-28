@@ -3,12 +3,10 @@ import { Link } from 'react-router-dom';
 
 import { appConfig } from '../../../config/app.config';
 import { listActiveProducts, type Product } from '../../catalog';
-import { PAYMENT_METHOD_LABELS } from '../../store-settings';
 import { CategoryCard } from '../components/CategoryCard';
 import { ProductGrid } from '../components/ProductGrid';
 import { useStorefrontContext } from '../hooks/storefront-context';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
-import { buildWhatsappLink } from '../utils/whatsapp';
 
 export function HomePage() {
   const { categories, settings } = useStorefrontContext();
@@ -22,7 +20,7 @@ export function HomePage() {
 
   useEffect(() => {
     let cancelled = false;
-    listActiveProducts({ featuredOnly: true, sort: 'recent', pageSize: 8 })
+    listActiveProducts({ featuredOnly: true, sort: 'recent', pageSize: 10 })
       .then((page) => {
         if (!cancelled) setFeatured(page.products);
       })
@@ -34,56 +32,58 @@ export function HomePage() {
     };
   }, []);
 
-  const whatsappLink = buildWhatsappLink(settings.whatsappNumberNormalized);
-  const storeName = settings.storeName || appConfig.name;
-
   return (
     <div className="store-home">
-      <section className="store-hero">
-        <p className="eyebrow">Tienda en línea</p>
-        <h1>{storeName}</h1>
-        {settings.storeDescription ? (
-          <p className="store-hero__lead">{settings.storeDescription}</p>
-        ) : null}
-        <div className="button-group">
-          <Link className="button button--primary" to="/catalogo">
-            Ver catálogo
+      <section className="hero">
+        <div className="hero__copy">
+          <p className="hero__eyebrow">Comprá fácil, rápido y seguro</p>
+          <h1 className="hero__title">
+            Todo lo que necesitás,
+            <br />
+            en un solo lugar.
+          </h1>
+          <p className="hero__lead">
+            Miles de productos • Ofertas todos los días • Pagás al recibir
+          </p>
+          <Link className="button button--primary hero__cta" to="/catalogo?destacados=1">
+            Ver ofertas destacadas <span aria-hidden="true">→</span>
           </Link>
-          {whatsappLink ? (
-            <a
-              className="button button--ghost"
-              href={whatsappLink}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              Consultar por WhatsApp
-            </a>
-          ) : null}
         </div>
+        <div aria-hidden="true" className="hero__media" />
       </section>
 
       {categories.length > 0 ? (
-        <section aria-labelledby="home-categories" className="store-section">
-          <div className="store-section__head">
-            <h2 id="home-categories">Categorías</h2>
-            <Link to="/catalogo">Ver todo</Link>
-          </div>
-          <div className="category-grid">
-            {categories.map((category) => (
-              <CategoryCard category={category} key={category.id} />
-            ))}
-          </div>
+        <section aria-label="Categorías" className="home-categories">
+          {categories.map((category, index) => (
+            <CategoryCard category={category} highlighted={index === 0} key={category.id} />
+          ))}
+          <Link className="category-card category-card--all" to="/catalogo">
+            <span className="category-card__thumb category-card__thumb--all" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+              <span />
+            </span>
+            <span className="category-card__body">
+              <span className="category-card__name">Ver todas</span>
+              <span className="category-card__link">Todas las categorías</span>
+            </span>
+          </Link>
         </section>
       ) : null}
 
       <section aria-labelledby="home-featured" className="store-section">
         <div className="store-section__head">
-          <h2 id="home-featured">Productos destacados</h2>
-          <Link to="/catalogo">Ver catálogo</Link>
+          <h2 className="store-section__title" id="home-featured">
+            Productos destacados
+          </h2>
+          <Link className="store-section__more" to="/catalogo">
+            Ver todos los productos <span aria-hidden="true">→</span>
+          </Link>
         </div>
         {featured === null ? (
-          <div className="product-grid product-grid--skeleton" aria-hidden="true">
-            {Array.from({ length: 4 }).map((_, index) => (
+          <div aria-hidden="true" className="product-grid">
+            {Array.from({ length: 5 }).map((_, index) => (
               <div className="product-card product-card--skeleton" key={index} />
             ))}
           </div>
@@ -93,49 +93,6 @@ export function HomePage() {
           <p className="store-empty">Todavía no hay productos destacados.</p>
         )}
       </section>
-
-      <section aria-labelledby="home-benefits" className="store-section store-benefits">
-        <h2 className="sr-only" id="home-benefits">
-          Beneficios
-        </h2>
-        {settings.pickupEnabled ? (
-          <div className="store-benefit">
-            <strong>Retiro en local</strong>
-            <span>Pasá a buscar tu pedido cuando te quede cómodo.</span>
-          </div>
-        ) : null}
-        {settings.deliveryEnabled ? (
-          <div className="store-benefit">
-            <strong>Delivery por zonas</strong>
-            <span>Coordinamos la entrega según tu zona.</span>
-          </div>
-        ) : null}
-        {settings.acceptedPaymentMethods.length > 0 ? (
-          <div className="store-benefit">
-            <strong>Medios de pago</strong>
-            <span>
-              {settings.acceptedPaymentMethods
-                .map((method) => PAYMENT_METHOD_LABELS[method])
-                .join(' · ')}
-            </span>
-          </div>
-        ) : null}
-      </section>
-
-      {whatsappLink ? (
-        <section className="store-cta">
-          <h2>¿Tenés una consulta?</h2>
-          <p>{settings.orderConfirmationMessage || 'Escribinos y te ayudamos con tu compra.'}</p>
-          <a
-            className="button button--primary"
-            href={whatsappLink}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Escribir por WhatsApp
-          </a>
-        </section>
-      ) : null}
     </div>
   );
 }
