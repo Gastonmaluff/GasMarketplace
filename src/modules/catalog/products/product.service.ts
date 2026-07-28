@@ -24,7 +24,7 @@ import {
   validateImageFile,
   type StoredImage,
 } from '../shared/images';
-import { CatalogError, getCatalogContext } from '../shared/catalog-context';
+import { CatalogError, getCatalogContext, toCatalogError } from '../shared/catalog-context';
 import { validateProductDraft } from './product.validation';
 import type {
   AdminProduct,
@@ -39,6 +39,12 @@ import type {
 
 const MAX_PRODUCTS = 300;
 const MAX_MOVEMENTS = 20;
+
+type FirestorePayload = Record<string, unknown>;
+
+function withoutUndefined(payload: FirestorePayload): FirestorePayload {
+  return Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== undefined));
+}
 
 export function toProduct(snapshot: DocumentSnapshot): Product {
   const data = snapshot.data() ?? {};
@@ -118,18 +124,30 @@ async function withPrivateData(products: Product[]): Promise<AdminProduct[]> {
 
 /** Listado administrativo completo, ordenado por última actualización. */
 export async function listProducts(): Promise<AdminProduct[]> {
-  const { database } = getCatalogContext();
-  const snapshot = await getDocs(
-    query(collection(database, 'products'), orderBy('updatedAt', 'desc'), queryLimit(MAX_PRODUCTS)),
-  );
-  return withPrivateData(snapshot.docs.map(toProduct));
+  try {
+    const { database } = getCatalogContext();
+    const snapshot = await getDocs(
+      query(
+        collection(database, 'products'),
+        orderBy('updatedAt', 'desc'),
+        queryLimit(MAX_PRODUCTS),
+      ),
+    );
+    return await withPrivateData(snapshot.docs.map(toProduct));
+  } catch (cause) {
+    throw toCatalogError(cause, 'No se pudieron cargar los productos.');
+  }
 }
 
 export async function getProduct(productId: string): Promise<AdminProduct | null> {
-  const { database } = getCatalogContext();
-  const snapshot = await getDoc(doc(database, 'products', productId));
-  if (!snapshot.exists()) return null;
-  return { ...toProduct(snapshot), ...(await loadProductPrivate(productId)) };
+  try {
+    const { database } = getCatalogContext();
+    const snapshot = await getDoc(doc(database, 'products', productId));
+    if (!snapshot.exists()) return null;
+    return { ...toProduct(snapshot), ...(await loadProductPrivate(productId)) };
+  } catch (cause) {
+    throw toCatalogError(cause, 'No se pudo cargar el producto.');
+  }
 }
 
 async function readAllowNegativeStock(): Promise<boolean> {
@@ -210,12 +228,17 @@ export async function saveProduct({
     if (!image.file) continue;
     const fileError = validateImageFile(image.file);
     if (fileError) throw new CatalogError([fileError]);
-    const stored = await uploadImage(
-      storage,
-      buildImagePath(`products/${productRef.id}`, image.file),
-      image.file,
-      (percent) => onImageProgress?.(image.id, percent),
-    );
+    let stored: StoredImage;
+    try {
+      stored = await uploadImage(
+        storage,
+        buildImagePath(`products/${productRef.id}`, image.file),
+        image.file,
+        (percent) => onImageProgress?.(image.id, percent),
+      );
+    } catch (cause) {
+      throw toCatalogError(cause, 'No se pudo subir la imagen.');
+    }
     uploaded.set(image.id, stored);
   }
 
@@ -279,43 +302,49 @@ export async function saveProduct({
         if (image.path && !finalPaths.has(image.path)) obsoletePaths.push(image.path);
       }
 
-      transaction.set(productRef, {
-        name: draft.name.trim().replace(/\s+/gu, ' '),
-        normalizedName: normalizeText(draft.name, 'lowercase'),
-        slug: draft.slug,
-        shortDescription: draft.shortDescription.trim(),
-        description: draft.description.trim(),
-        sku,
-        barcode,
-        categoryIds: draft.categoryIds,
-        primaryCategoryId: draft.primaryCategoryId,
-        price: draft.price,
-        compareAtPrice: draft.compareAtPrice,
-        stock: draft.stock,
-        lowStockThreshold: draft.lowStockThreshold,
-        trackStock: draft.trackStock,
-        allowBackorder: draft.allowBackorder,
-        images: finalImages,
-        featured: draft.featured,
-        active: draft.active,
-        searchTokens: buildSearchTokens([draft.name, sku, barcode]),
-        createdAt: productId ? existing.createdAt : serverTimestamp(),
-        createdBy: productId ? existing.createdBy : uid,
-        updatedAt: serverTimestamp(),
-        updatedBy: uid,
-      });
-      transaction.set(productPrivateRef, {
-        productId: productRef.id,
-        costPrice: draft.costPrice,
-        supplierName: draft.supplierName.trim(),
-        internalNotes: draft.internalNotes.trim(),
-        createdAt: productId
-          ? (existingPrivate.createdAt ?? existing.createdAt)
-          : serverTimestamp(),
-        createdBy: productId ? (existingPrivate.createdBy ?? existing.createdBy) : uid,
-        updatedAt: serverTimestamp(),
-        updatedBy: uid,
-      });
+      transaction.set(
+        productRef,
+        withoutUndefined({
+          name: draft.name.trim().replace(/\s+/gu, ' '),
+          normalizedName: normalizeText(draft.name, 'lowercase'),
+          slug: draft.slug,
+          shortDescription: draft.shortDescription.trim(),
+          description: draft.description.trim(),
+          sku,
+          barcode,
+          categoryIds: draft.categoryIds,
+          primaryCategoryId: draft.primaryCategoryId,
+          price: draft.price ?? 0,
+          compareAtPrice: draft.compareAtPrice,
+          stock: draft.stock ?? 0,
+          lowStockThreshold: draft.lowStockThreshold,
+          trackStock: draft.trackStock,
+          allowBackorder: draft.allowBackorder,
+          images: finalImages,
+          featured: draft.featured,
+          active: draft.active,
+          searchTokens: buildSearchTokens([draft.name, sku, barcode]),
+          createdAt: productId ? (existing.createdAt ?? serverTimestamp()) : serverTimestamp(),
+          createdBy: productId ? (existing.createdBy ?? uid) : uid,
+          updatedAt: serverTimestamp(),
+          updatedBy: uid,
+        }),
+      );
+      transaction.set(
+        productPrivateRef,
+        withoutUndefined({
+          productId: productRef.id,
+          costPrice: draft.costPrice,
+          supplierName: draft.supplierName.trim(),
+          internalNotes: draft.internalNotes.trim(),
+          createdAt: productId
+            ? (existingPrivate.createdAt ?? existing.createdAt ?? serverTimestamp())
+            : serverTimestamp(),
+          createdBy: productId ? (existingPrivate.createdBy ?? existing.createdBy ?? uid) : uid,
+          updatedAt: serverTimestamp(),
+          updatedBy: uid,
+        }),
+      );
       commitSlug();
       commitSku();
       commitBarcode();
@@ -324,7 +353,7 @@ export async function saveProduct({
     for (const stored of uploaded.values()) {
       await deleteImageQuietly(storage, stored.path);
     }
-    throw error;
+    throw toCatalogError(error, 'No se pudo guardar el producto.');
   }
 
   for (const path of obsoletePaths) {
@@ -335,13 +364,17 @@ export async function saveProduct({
 }
 
 export async function setProductActive(productId: string, active: boolean): Promise<void> {
-  const { database, uid } = getCatalogContext();
-  await runTransaction(database, async (transaction) => {
-    const productRef = doc(database, 'products', productId);
-    const snapshot = await transaction.get(productRef);
-    if (!snapshot.exists()) throw new CatalogError(['El producto ya no existe.']);
-    transaction.update(productRef, { active, updatedAt: serverTimestamp(), updatedBy: uid });
-  });
+  try {
+    const { database, uid } = getCatalogContext();
+    await runTransaction(database, async (transaction) => {
+      const productRef = doc(database, 'products', productId);
+      const snapshot = await transaction.get(productRef);
+      if (!snapshot.exists()) throw new CatalogError(['El producto ya no existe.']);
+      transaction.update(productRef, { active, updatedAt: serverTimestamp(), updatedBy: uid });
+    });
+  } catch (cause) {
+    throw toCatalogError(cause, 'No se pudo actualizar la visibilidad del producto.');
+  }
 }
 
 /**
@@ -364,40 +397,44 @@ export async function canDeleteProduct(productId: string): Promise<{
  * huérfanos inofensivos (se documenta como límite conocido).
  */
 export async function deleteProduct(productId: string): Promise<void> {
-  const { database, storage } = getCatalogContext();
+  try {
+    const { database, storage } = getCatalogContext();
 
-  const gate = await canDeleteProduct(productId);
-  if (!gate.allowed) {
-    throw new CatalogError([gate.reason ?? 'El producto no se puede eliminar.']);
-  }
+    const gate = await canDeleteProduct(productId);
+    if (!gate.allowed) {
+      throw new CatalogError([gate.reason ?? 'El producto no se puede eliminar.']);
+    }
 
-  const imagePaths: string[] = [];
-  await runTransaction(database, async (transaction) => {
-    const productRef = doc(database, 'products', productId);
-    const snapshot = await transaction.get(productRef);
-    if (!snapshot.exists()) throw new CatalogError(['El producto ya no existe.']);
-    const data = snapshot.data();
+    const imagePaths: string[] = [];
+    await runTransaction(database, async (transaction) => {
+      const productRef = doc(database, 'products', productId);
+      const snapshot = await transaction.get(productRef);
+      if (!snapshot.exists()) throw new CatalogError(['El producto ya no existe.']);
+      const data = snapshot.data();
 
-    if (Array.isArray(data.images)) {
-      for (const image of data.images) {
-        if (typeof image?.path === 'string' && image.path !== '') imagePaths.push(image.path);
+      if (Array.isArray(data.images)) {
+        for (const image of data.images) {
+          if (typeof image?.path === 'string' && image.path !== '') imagePaths.push(image.path);
+        }
       }
-    }
-    transaction.delete(productRef);
-    if (typeof data.slug === 'string' && data.slug !== '') {
-      transaction.delete(doc(database, 'productSlugs', data.slug));
-    }
-    if (typeof data.sku === 'string' && data.sku !== '') {
-      transaction.delete(doc(database, 'productSkus', normalizeCode(data.sku)));
-    }
-    if (typeof data.barcode === 'string' && data.barcode !== '') {
-      transaction.delete(doc(database, 'productBarcodes', normalizeCode(data.barcode)));
-    }
-    transaction.delete(doc(database, 'productPrivate', productId));
-  });
+      transaction.delete(productRef);
+      if (typeof data.slug === 'string' && data.slug !== '') {
+        transaction.delete(doc(database, 'productSlugs', data.slug));
+      }
+      if (typeof data.sku === 'string' && data.sku !== '') {
+        transaction.delete(doc(database, 'productSkus', normalizeCode(data.sku)));
+      }
+      if (typeof data.barcode === 'string' && data.barcode !== '') {
+        transaction.delete(doc(database, 'productBarcodes', normalizeCode(data.barcode)));
+      }
+      transaction.delete(doc(database, 'productPrivate', productId));
+    });
 
-  for (const path of imagePaths) {
-    await deleteImageQuietly(storage, path);
+    for (const path of imagePaths) {
+      await deleteImageQuietly(storage, path);
+    }
+  } catch (cause) {
+    throw toCatalogError(cause, 'No se pudo eliminar el producto.');
   }
 }
 
@@ -417,45 +454,51 @@ export async function adjustStock({
     throw new CatalogError(['Indicá el motivo del ajuste.']);
   }
 
-  const { database, uid } = getCatalogContext();
-  await runTransaction(database, async (transaction) => {
-    const productRef = doc(database, 'products', productId);
-    const settingsRef = doc(database, 'settings', 'private');
-    const [productSnapshot, settingsSnapshot] = await Promise.all([
-      transaction.get(productRef),
-      transaction.get(settingsRef),
-    ]);
-    if (!productSnapshot.exists()) throw new CatalogError(['El producto ya no existe.']);
+  try {
+    const { database, uid } = getCatalogContext();
+    await runTransaction(database, async (transaction) => {
+      const productRef = doc(database, 'products', productId);
+      const settingsRef = doc(database, 'settings', 'private');
+      const [productSnapshot, settingsSnapshot] = await Promise.all([
+        transaction.get(productRef),
+        transaction.get(settingsRef),
+      ]);
+      if (!productSnapshot.exists()) throw new CatalogError(['El producto ya no existe.']);
 
-    const allowNegativeStock =
-      settingsSnapshot.exists() && settingsSnapshot.data().allowNegativeStock === true;
-    if (newStock < 0 && !allowNegativeStock) {
-      throw new CatalogError(['El stock no puede quedar negativo según la configuración actual.']);
-    }
+      const allowNegativeStock =
+        settingsSnapshot.exists() && settingsSnapshot.data().allowNegativeStock === true;
+      if (newStock < 0 && !allowNegativeStock) {
+        throw new CatalogError([
+          'El stock no puede quedar negativo según la configuración actual.',
+        ]);
+      }
 
-    const previousStock =
-      typeof productSnapshot.data().stock === 'number' ? productSnapshot.data().stock : 0;
-    const quantity = newStock - previousStock;
-    if (quantity === 0) {
-      throw new CatalogError(['El stock nuevo es igual al actual; no hay nada que ajustar.']);
-    }
+      const previousStock =
+        typeof productSnapshot.data().stock === 'number' ? productSnapshot.data().stock : 0;
+      const quantity = newStock - previousStock;
+      if (quantity === 0) {
+        throw new CatalogError(['El stock nuevo es igual al actual; no hay nada que ajustar.']);
+      }
 
-    transaction.update(productRef, {
-      stock: newStock,
-      updatedAt: serverTimestamp(),
-      updatedBy: uid,
+      transaction.update(productRef, {
+        stock: newStock,
+        updatedAt: serverTimestamp(),
+        updatedBy: uid,
+      });
+      transaction.set(doc(collection(database, 'stockMovements')), {
+        productId,
+        type: 'ajuste',
+        quantity,
+        previousStock,
+        resultingStock: newStock,
+        reason: reason.trim(),
+        createdAt: serverTimestamp(),
+        createdBy: uid,
+      });
     });
-    transaction.set(doc(collection(database, 'stockMovements')), {
-      productId,
-      type: 'ajuste',
-      quantity,
-      previousStock,
-      resultingStock: newStock,
-      reason: reason.trim(),
-      createdAt: serverTimestamp(),
-      createdBy: uid,
-    });
-  });
+  } catch (cause) {
+    throw toCatalogError(cause, 'No se pudo registrar el ajuste de stock.');
+  }
 }
 
 export async function listStockMovements(productId: string): Promise<StockMovement[]> {
