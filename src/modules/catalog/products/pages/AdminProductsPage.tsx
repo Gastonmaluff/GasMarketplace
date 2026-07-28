@@ -1,22 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { appConfig } from '../../../../config/app.config';
 import { Alert } from '../../../../components/ui/Alert';
 import { Badge } from '../../../../components/ui/Badge';
 import { Button } from '../../../../components/ui/Button';
 import { DataTable, type DataTableColumn } from '../../../../components/ui/DataTable';
+import { Icon } from '../../../../components/ui/Icon';
 import { Modal } from '../../../../components/ui/Modal';
 import { PageHeader } from '../../../../components/ui/PageHeader';
 import { TextField } from '../../../../components/ui/TextField';
 import { Toast } from '../../../../components/ui/Toast';
+import { appConfig } from '../../../../config/app.config';
 import { formatNumericValue, resolveNumericDecimals } from '../../../../utils/formatters/number';
-import { CatalogError } from '../../shared/catalog-context';
 import { listCategories } from '../../categories/category.service';
 import type { Category } from '../../categories/category.types';
+import { CatalogError } from '../../shared/catalog-context';
 import { deleteProduct, listProducts, setProductActive } from '../product.service';
-import { isLowStock } from '../product.validation';
 import type { Product } from '../product.types';
+import { isLowStock } from '../product.validation';
 
 const DEFAULT_LOW_STOCK_THRESHOLD = 3;
 
@@ -37,6 +38,11 @@ function formatDate(millis?: number): string {
     timeStyle: 'short',
     timeZone: appConfig.timezone,
   }).format(new Date(millis));
+}
+
+function formatPercent(value: number, total: number): string {
+  if (total === 0) return '0%';
+  return `${Math.round((value / total) * 100)}%`;
 }
 
 export function AdminProductsPage() {
@@ -100,6 +106,30 @@ export function AdminProductsPage() {
     });
   }, [activityFilter, categoryFilter, featuredOnly, lowStockOnly, products, search]);
 
+  const productStats = useMemo(() => {
+    const allProducts = products ?? [];
+    const total = allProducts.length;
+    const active = allProducts.filter((product) => product.active).length;
+    const featured = allProducts.filter((product) => product.featured).length;
+    const lowStock = allProducts.filter((product) =>
+      isLowStock(product, DEFAULT_LOW_STOCK_THRESHOLD),
+    ).length;
+    const inventoryValue = allProducts.reduce(
+      (sum, product) => sum + (product.trackStock ? Math.max(product.stock, 0) * product.price : 0),
+      0,
+    );
+    return { active, featured, inventoryValue, lowStock, total };
+  }, [products]);
+
+  const lowStockAlerts = useMemo(
+    () =>
+      (products ?? [])
+        .filter((product) => product.trackStock && product.stock <= DEFAULT_LOW_STOCK_THRESHOLD)
+        .sort((first, second) => first.stock - second.stock)
+        .slice(0, 4),
+    [products],
+  );
+
   async function toggleActive(product: Product) {
     setBusyId(product.id);
     setActionError(null);
@@ -143,8 +173,12 @@ export function AdminProductsPage() {
         return (
           <div className="cell-title">
             {primaryImage ? (
-              <img alt="" className="cell-thumb" height="36" src={primaryImage.url} width="36" />
-            ) : null}
+              <img alt="" className="cell-thumb" height="48" src={primaryImage.url} width="48" />
+            ) : (
+              <span className="cell-thumb cell-thumb--empty">
+                <Icon name="box" size={18} />
+              </span>
+            )}
             <div>
               <strong>{product.name}</strong>
               <small>{product.sku ?? `/${product.slug}`}</small>
@@ -173,10 +207,12 @@ export function AdminProductsPage() {
       align: 'right',
       render: (product) =>
         product.trackStock ? (
-          <span>
-            {product.stock}{' '}
+          <span className="stock-cell">
+            <strong>{product.stock}</strong>
             {isLowStock(product, DEFAULT_LOW_STOCK_THRESHOLD) ? (
-              <Badge tone="warning">Bajo</Badge>
+              <Badge tone={product.stock <= 0 ? 'danger' : 'warning'}>
+                {product.stock <= 0 ? 'Sin stock' : 'Stock bajo'}
+              </Badge>
             ) : null}
           </span>
         ) : (
@@ -210,13 +246,16 @@ export function AdminProductsPage() {
       render: (product) => (
         <div className="row-actions">
           <Button
+            className="table-icon-action"
             onClick={() => navigate(`/admin/productos/${product.id}`)}
             size="small"
             variant="ghost"
           >
-            Editar
+            <Icon name="edit" size={16} />
+            <span>Editar</span>
           </Button>
           <Button
+            className="table-compact-action"
             loading={busyId === product.id}
             onClick={() => void toggleActive(product)}
             size="small"
@@ -224,8 +263,14 @@ export function AdminProductsPage() {
           >
             {product.active ? 'Desactivar' : 'Activar'}
           </Button>
-          <Button onClick={() => setPendingDelete(product)} size="small" variant="danger">
-            Eliminar
+          <Button
+            className="table-icon-action"
+            onClick={() => setPendingDelete(product)}
+            size="small"
+            variant="danger"
+          >
+            <Icon name="trash" size={16} />
+            <span>Eliminar</span>
           </Button>
         </div>
       ),
@@ -236,9 +281,10 @@ export function AdminProductsPage() {
     <div className="admin-page admin-page--wide">
       <PageHeader
         breadcrumbs={[{ label: 'Inicio', href: '/admin' }, { label: 'Productos' }]}
-        description="Mercadería de la tienda: precios, imágenes y stock."
+        description="Gestioná tu catálogo: precios, imágenes, stock y visibilidad."
         primaryAction={
-          <Link className="button button--primary" to="/admin/productos/nuevo">
+          <Link className="button button--primary admin-primary-action" to="/admin/productos/nuevo">
+            <Icon name="plus" size={18} />
             Nuevo producto
           </Link>
         }
@@ -251,71 +297,219 @@ export function AdminProductsPage() {
         </Alert>
       ) : null}
 
-      <div className="list-toolbar list-toolbar--products">
-        <TextField
-          label="Buscar"
-          onChange={(event) => setSearch(event.currentTarget.value)}
-          placeholder="Nombre, slug, SKU o código"
-          type="search"
-          value={search}
-        />
-        <div className="text-field">
-          <label htmlFor="product-category-filter">Categoría</label>
-          <select
-            className="text-field__input"
-            id="product-category-filter"
-            onChange={(event) => setCategoryFilter(event.currentTarget.value)}
-            value={categoryFilter}
-          >
-            <option value="">Todas</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="text-field">
-          <label htmlFor="product-activity-filter">Estado</label>
-          <select
-            className="text-field__input"
-            id="product-activity-filter"
-            onChange={(event) => setActivityFilter(event.currentTarget.value as ActivityFilter)}
-            value={activityFilter}
-          >
-            <option value="all">Todos</option>
-            <option value="active">Activos</option>
-            <option value="inactive">Inactivos</option>
-          </select>
-        </div>
-        <label className="checkbox-field">
-          <input
-            checked={lowStockOnly}
-            onChange={(event) => setLowStockOnly(event.currentTarget.checked)}
-            type="checkbox"
-          />
-          <span>Solo stock bajo</span>
-        </label>
-        <label className="checkbox-field">
-          <input
-            checked={featuredOnly}
-            onChange={(event) => setFeaturedOnly(event.currentTarget.checked)}
-            type="checkbox"
-          />
-          <span>Solo destacados</span>
-        </label>
-      </div>
+      <div className="admin-products-layout">
+        <div className="admin-products-main">
+          <section className="admin-filter-panel" aria-label="Filtros de productos">
+            <div className="admin-filter-panel__search">
+              <TextField
+                label="Buscar"
+                onChange={(event) => setSearch(event.currentTarget.value)}
+                placeholder="Buscar por nombre, slug, SKU o código..."
+                type="search"
+                value={search}
+              />
+            </div>
+            <div className="admin-filter-panel__fields">
+              <div className="text-field">
+                <label htmlFor="product-category-filter">Categoría</label>
+                <select
+                  className="text-field__input"
+                  id="product-category-filter"
+                  onChange={(event) => setCategoryFilter(event.currentTarget.value)}
+                  value={categoryFilter}
+                >
+                  <option value="">Todas</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="text-field">
+                <label htmlFor="product-activity-filter">Estado</label>
+                <select
+                  className="text-field__input"
+                  id="product-activity-filter"
+                  onChange={(event) =>
+                    setActivityFilter(event.currentTarget.value as ActivityFilter)
+                  }
+                  value={activityFilter}
+                >
+                  <option value="all">Todos</option>
+                  <option value="active">Activos</option>
+                  <option value="inactive">Inactivos</option>
+                </select>
+              </div>
+              <label className="admin-toggle-filter">
+                <input
+                  checked={lowStockOnly}
+                  onChange={(event) => setLowStockOnly(event.currentTarget.checked)}
+                  type="checkbox"
+                />
+                <span>Stock bajo</span>
+              </label>
+              <label className="admin-toggle-filter">
+                <input
+                  checked={featuredOnly}
+                  onChange={(event) => setFeaturedOnly(event.currentTarget.checked)}
+                  type="checkbox"
+                />
+                <span>Destacados</span>
+              </label>
+            </div>
+          </section>
 
-      <DataTable
-        columns={columns}
-        emptyDescription="Cargá el primer producto para empezar a vender."
-        emptyTitle="Sin productos"
-        error={loadError ?? undefined}
-        getRowKey={(product) => product.id}
-        loading={products === null && !loadError}
-        pageSize={10}
-        rows={visibleProducts}
-      />
+          <section className="admin-metric-grid" aria-label="Resumen de productos">
+            <article className="admin-metric-card">
+              <span className="admin-metric-card__icon">
+                <Icon name="box" />
+              </span>
+              <div>
+                <span>Total productos</span>
+                <strong>{productStats.total}</strong>
+              </div>
+            </article>
+            <article className="admin-metric-card">
+              <span className="admin-metric-card__icon admin-metric-card__icon--accent">
+                <Icon name="tag" />
+              </span>
+              <div>
+                <span>Destacados</span>
+                <strong>{productStats.featured}</strong>
+              </div>
+            </article>
+            <article className="admin-metric-card">
+              <span className="admin-metric-card__icon">
+                <Icon name="alert" />
+              </span>
+              <div>
+                <span>Stock bajo</span>
+                <strong>{productStats.lowStock}</strong>
+              </div>
+            </article>
+            <article className="admin-metric-card">
+              <span className="admin-metric-card__icon admin-metric-card__icon--warm">
+                <Icon name="dollar" />
+              </span>
+              <div>
+                <span>Valor inventario</span>
+                <strong>{formatPrice(productStats.inventoryValue)}</strong>
+              </div>
+            </article>
+          </section>
+
+          <section className="admin-table-panel" aria-label="Listado de productos">
+            <DataTable
+              columns={columns}
+              emptyDescription="Cargá el primer producto para empezar a vender."
+              emptyTitle="Sin productos"
+              error={loadError ?? undefined}
+              getRowKey={(product) => product.id}
+              loading={products === null && !loadError}
+              pageSize={10}
+              rows={visibleProducts}
+            />
+          </section>
+        </div>
+
+        <aside className="admin-products-aside" aria-label="Resumen lateral de catálogo">
+          <section className="admin-side-card">
+            <div className="admin-side-card__head">
+              <div>
+                <h2>Resumen del catálogo</h2>
+                <p>Estado actual</p>
+              </div>
+              <Icon name="bell" size={18} />
+            </div>
+            <div className="catalog-donut" aria-hidden="true">
+              <span>{productStats.total}</span>
+            </div>
+            <div className="catalog-breakdown">
+              <span>
+                <i className="catalog-breakdown__dot catalog-breakdown__dot--active" />
+                Activos {productStats.active} (
+                {formatPercent(productStats.active, productStats.total)})
+              </span>
+              <span>
+                <i className="catalog-breakdown__dot catalog-breakdown__dot--featured" />
+                Destacados {productStats.featured} (
+                {formatPercent(productStats.featured, productStats.total)})
+              </span>
+              <span>
+                <i className="catalog-breakdown__dot catalog-breakdown__dot--muted" />
+                Inactivos {productStats.total - productStats.active} (
+                {formatPercent(productStats.total - productStats.active, productStats.total)})
+              </span>
+            </div>
+          </section>
+
+          <section className="admin-side-card">
+            <div className="admin-side-card__head">
+              <div>
+                <h2>Alertas de stock bajo</h2>
+                <p>Primeros productos a revisar</p>
+              </div>
+            </div>
+            <div className="stock-alert-list">
+              {lowStockAlerts.length > 0 ? (
+                lowStockAlerts.map((product) => {
+                  const primaryImage =
+                    product.images.find((image) => image.isPrimary) ?? product.images[0];
+                  return (
+                    <Link
+                      className="stock-alert-item"
+                      key={product.id}
+                      to={`/admin/productos/${product.id}`}
+                    >
+                      {primaryImage ? (
+                        <img alt="" src={primaryImage.url} />
+                      ) : (
+                        <span>
+                          <Icon name="box" size={16} />
+                        </span>
+                      )}
+                      <span>
+                        <strong>{product.name}</strong>
+                        <small>Stock: {product.stock} unidades</small>
+                      </span>
+                    </Link>
+                  );
+                })
+              ) : (
+                <p className="admin-page__note">Sin alertas por ahora.</p>
+              )}
+            </div>
+          </section>
+
+          <section className="admin-side-card">
+            <div className="admin-side-card__head">
+              <div>
+                <h2>Acciones rápidas</h2>
+                <p>Atajos del catálogo</p>
+              </div>
+            </div>
+            <div className="quick-action-list">
+              <Link to="/admin/productos/nuevo">
+                <Icon name="plus" size={16} />
+                Nuevo producto
+              </Link>
+              <Link to="/admin/categorias">
+                <Icon name="tag" size={16} />
+                Gestionar categorías
+              </Link>
+              <button onClick={() => setFeaturedOnly((current) => !current)} type="button">
+                <Icon name="star" size={16} />
+                Ver destacados
+              </button>
+              <button onClick={() => setLowStockOnly((current) => !current)} type="button">
+                <Icon name="filter" size={16} />
+                Ver stock bajo
+              </button>
+            </div>
+          </section>
+        </aside>
+      </div>
       {loadError ? (
         <Button onClick={reload} variant="secondary">
           Reintentar

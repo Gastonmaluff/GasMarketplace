@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 
+import { Icon } from '../../../components/ui/Icon';
 import { PageHeader } from '../../../components/ui/PageHeader';
 
 /**
@@ -14,18 +15,33 @@ export function AdminHomePage() {
         eyebrow="Panel administrativo"
         title="Inicio"
       />
-      <div className="admin-shortcuts">
+      <div className="admin-shortcuts" aria-label="Accesos principales">
         <Link className="admin-shortcut" to="/admin/productos">
-          <strong>Productos</strong>
-          <span>Cargar mercadería, precios, imágenes y stock.</span>
+          <span className="admin-shortcut__icon">
+            <Icon name="box" />
+          </span>
+          <span className="admin-shortcut__copy">
+            <strong>Productos</strong>
+            <span>Cargar mercadería, precios, imágenes y stock.</span>
+          </span>
         </Link>
         <Link className="admin-shortcut" to="/admin/categorias">
-          <strong>Categorías</strong>
-          <span>Organizar el catálogo en secciones.</span>
+          <span className="admin-shortcut__icon">
+            <Icon name="tag" />
+          </span>
+          <span className="admin-shortcut__copy">
+            <strong>Categorías</strong>
+            <span>Organizar el catálogo en secciones.</span>
+          </span>
         </Link>
         <Link className="admin-shortcut" to="/admin/configuracion">
-          <strong>Configuración</strong>
-          <span>Datos de la tienda, entrega y medios de pago.</span>
+          <span className="admin-shortcut__icon">
+            <Icon name="settings" />
+          </span>
+          <span className="admin-shortcut__copy">
+            <strong>Configuración</strong>
+            <span>Datos de la tienda, entrega y medios de pago.</span>
+          </span>
         </Link>
       </div>
       <p className="admin-page__note">

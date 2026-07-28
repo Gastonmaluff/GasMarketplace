@@ -21,7 +21,13 @@ export type IconName =
   | 'shield'
   | 'star'
   | 'cart'
-  | 'chevron-down';
+  | 'chevron-down'
+  | 'plus'
+  | 'edit'
+  | 'trash'
+  | 'filter'
+  | 'dollar'
+  | 'bell';
 
 interface IconProps {
   name: IconName;
@@ -66,6 +72,14 @@ const paths: Record<IconName, React.ReactNode> = {
     <path d="M3 4h2l2.4 12.2a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L21 8H6M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm9 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
   ),
   'chevron-down': <path d="m6 9 6 6 6-6" />,
+  plus: <path d="M12 5v14M5 12h14" />,
+  edit: <path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3ZM13.5 7.5l3 3" />,
+  trash: <path d="M4 7h16M9 7V5h6v2m-8 0 1 13h8l1-13M10 11v5M14 11v5" />,
+  filter: <path d="M4 6h16M7 12h10M10 18h4" />,
+  dollar: (
+    <path d="M12 3v18M16 7.5a4 4 0 0 0-4-2c-2.2 0-4 1.1-4 2.8 0 4.4 8 1.7 8 6 0 1.6-1.8 2.7-4 2.7a5 5 0 0 1-4.5-2.4" />
+  ),
+  bell: <path d="M18 9a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7ZM10 20h4" />,
 };
 
 export function Icon({ name, size = 20 }: IconProps) {
