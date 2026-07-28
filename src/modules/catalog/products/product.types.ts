@@ -21,7 +21,6 @@ export interface Product {
   /** Entero en PYG. */
   price: number;
   compareAtPrice?: number;
-  costPrice?: number;
   stock: number;
   lowStockThreshold?: number;
   trackStock: boolean;
@@ -32,7 +31,17 @@ export interface Product {
   updatedAtMillis?: number;
 }
 
-/** Campos editables del formulario; las imágenes viajan aparte. */
+export interface ProductPrivate {
+  productId: string;
+  costPrice?: number;
+  supplierName?: string;
+  internalNotes?: string;
+  updatedAtMillis?: number;
+}
+
+export type AdminProduct = Product & ProductPrivate;
+
+/** Campos editables del formulario; las imagenes viajan aparte. */
 export interface ProductDraft {
   name: string;
   slug: string;
@@ -45,6 +54,8 @@ export interface ProductDraft {
   price: number | null;
   compareAtPrice: number | null;
   costPrice: number | null;
+  supplierName: string;
+  internalNotes: string;
   stock: number | null;
   lowStockThreshold: number | null;
   trackStock: boolean;
@@ -53,7 +64,7 @@ export interface ProductDraft {
   active: boolean;
 }
 
-/** Imagen en edición: puede ser existente (url/path) o pendiente (file). */
+/** Imagen en edicion: puede ser existente (url/path) o pendiente (file). */
 export interface EditableProductImage {
   id: string;
   alt: string;
@@ -88,5 +99,6 @@ export const MAX_PRODUCT_NAME_LENGTH = 120;
 export const MAX_SHORT_DESCRIPTION_LENGTH = 200;
 export const MAX_DESCRIPTION_LENGTH = 5000;
 export const MAX_CODE_LENGTH = 60;
+export const MAX_PRIVATE_FIELD_LENGTH = 1000;
 export const MAX_PRICE = 1_000_000_000;
 export const MAX_STOCK = 1_000_000;

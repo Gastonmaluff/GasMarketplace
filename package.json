@@ -15,6 +15,7 @@
     "build": "npm run typecheck && vite build",
     "build:staging": "npm run typecheck && vite build --mode staging",
     "seed:staging": "node scripts/seed-staging-catalog.mjs",
+    "migrate:staging:product-private": "node scripts/migrate-staging-product-private.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
