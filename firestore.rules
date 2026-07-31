@@ -100,8 +100,9 @@ service cloud.firestore {
         incoming().deliveryEnabled is bool &&
         incoming().acceptedPaymentMethods is list &&
         incoming().acceptedPaymentMethods.size() >= 1 &&
-        incoming().acceptedPaymentMethods.size() <= 3 &&
-        incoming().acceptedPaymentMethods.hasOnly(['cash', 'bank_transfer', 'pay_on_pickup']) &&
+        incoming().acceptedPaymentMethods.size() <= 4 &&
+        incoming().acceptedPaymentMethods.hasOnly(
+          ['cash', 'bank_transfer', 'pay_on_pickup', 'cash_on_delivery']) &&
         incoming().deliveryZones is list &&
         incoming().deliveryZones.size() <= 20 &&
         boundedString(incoming().orderConfirmationMessage, 500) &&

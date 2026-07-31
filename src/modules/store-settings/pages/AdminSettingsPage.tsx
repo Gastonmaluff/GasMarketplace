@@ -252,6 +252,23 @@ export function AdminSettingsPage() {
                       onValueChange={(value) => updateZone(zone.id, { cost: value ?? 0 })}
                       value={zone.cost}
                     />
+                    <TextField
+                      helpText="Separá con comas. Base para el ruteo por ciudad."
+                      label="Ciudades que cubre"
+                      onChange={(event) =>
+                        updateZone(zone.id, { cities: event.currentTarget.value.split(',') })
+                      }
+                      placeholder="Ciudad del Este, Hernandarias, Presidente Franco"
+                      value={(zone.cities ?? []).join(',')}
+                    />
+                    <TextField
+                      helpText="Vacío = delivery propio; con nombre = transportadora."
+                      label="Transportadora (opcional)"
+                      onChange={(event) =>
+                        updateZone(zone.id, { carrierName: event.currentTarget.value })
+                      }
+                      value={zone.carrierName ?? ''}
+                    />
                     <label className="checkbox-field zone-editor__active">
                       <input
                         checked={zone.active}

@@ -9,7 +9,7 @@ export type OrderStatus =
 
 export type DeliveryMethod = 'pickup' | 'delivery';
 
-export type PaymentMethod = 'cash' | 'bank_transfer' | 'pay_on_pickup';
+export type PaymentMethod = 'cash' | 'bank_transfer' | 'pay_on_pickup' | 'cash_on_delivery';
 
 /** Snapshot del ítem al momento de la compra: nunca cambia si el producto se edita. */
 export interface OrderItem {

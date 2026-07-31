@@ -98,6 +98,35 @@ describe('validatePublicSettings', () => {
     );
     expect(result.valid).toBe(false);
   });
+
+  it('acepta el cobro en destino como medio de pago', () => {
+    const result = validatePublicSettings(
+      publicSettings({ acceptedPaymentMethods: ['cash', 'cash_on_delivery'] }),
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it('acepta zonas con ciudades y transportadora', () => {
+    const result = validatePublicSettings(
+      publicSettings({
+        deliveryEnabled: true,
+        deliveryZones: [
+          zone({ cities: ['Ciudad del Este', 'Hernandarias'], carrierName: 'Transportadora X' }),
+        ],
+      }),
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it('rechaza ciudades vacías dentro de una zona', () => {
+    const result = validatePublicSettings(
+      publicSettings({
+        deliveryEnabled: true,
+        deliveryZones: [zone({ cities: ['Válida', '  '] })],
+      }),
+    );
+    expect(result.valid).toBe(false);
+  });
 });
 
 describe('validatePrivateSettings', () => {
