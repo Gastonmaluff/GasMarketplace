@@ -16,6 +16,8 @@ function draft(overrides: Partial<ProductDraft> = {}): ProductDraft {
     price: 25000,
     compareAtPrice: null,
     costPrice: null,
+    supplierName: '',
+    internalNotes: '',
     stock: 10,
     lowStockThreshold: null,
     trackStock: true,

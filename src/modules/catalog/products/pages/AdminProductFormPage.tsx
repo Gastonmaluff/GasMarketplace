@@ -35,6 +35,8 @@ const emptyDraft: ProductDraft = {
   price: null,
   compareAtPrice: null,
   costPrice: null,
+  supplierName: '',
+  internalNotes: '',
   stock: 0,
   lowStockThreshold: null,
   trackStock: true,
@@ -104,6 +106,8 @@ export function AdminProductFormPage() {
             price: product.price,
             compareAtPrice: product.compareAtPrice ?? null,
             costPrice: product.costPrice ?? null,
+            supplierName: product.supplierName ?? '',
+            internalNotes: product.internalNotes ?? '',
             stock: product.stock,
             lowStockThreshold: product.lowStockThreshold ?? null,
             trackStock: product.trackStock,
@@ -409,6 +413,22 @@ export function AdminProductFormPage() {
             onValueChange={(value) => update({ costPrice: value })}
             value={draft.costPrice}
           />
+          <TextField
+            helpText="Uso interno; no se muestra en la tienda."
+            label="Proveedor"
+            onChange={(event) => update({ supplierName: event.currentTarget.value })}
+            value={draft.supplierName}
+          />
+          <div className="field--full text-field">
+            <label htmlFor="product-internal-notes">Notas internas</label>
+            <textarea
+              className="text-field__input"
+              id="product-internal-notes"
+              onChange={(event) => update({ internalNotes: event.currentTarget.value })}
+              rows={3}
+              value={draft.internalNotes}
+            />
+          </div>
         </div>
       </section>
 

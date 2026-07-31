@@ -174,7 +174,7 @@ service cloud.firestore {
       return incoming().keys().hasOnly([
           'name', 'normalizedName', 'slug', 'shortDescription', 'description',
           'sku', 'barcode', 'categoryIds', 'primaryCategoryId', 'price',
-          'compareAtPrice', 'costPrice', 'stock', 'lowStockThreshold',
+          'compareAtPrice', 'stock', 'lowStockThreshold',
           'trackStock', 'allowBackorder', 'images', 'featured', 'active',
           'searchTokens', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'
         ]) &&
@@ -195,7 +195,6 @@ service cloud.firestore {
           (incoming().compareAtPrice is int &&
             incoming().compareAtPrice > incoming().price &&
             incoming().compareAtPrice <= 1000000000)) &&
-        nullOrIntBetween(incoming().costPrice, 0, 1000000000) &&
         intBetween(incoming().stock, -1000000, 1000000) &&
         nullOrIntBetween(incoming().lowStockThreshold, 0, 100000) &&
         incoming().trackStock is bool &&
@@ -213,6 +212,25 @@ service cloud.firestore {
       allow read: if isAdmin() || resource.data.active == true;
       allow create: if isAdmin() && isValidProduct() && createdNow();
       allow update: if isAdmin() && isValidProduct() && createdImmutable();
+      allow delete: if isAdmin();
+    }
+
+    function isValidProductPrivate(productId) {
+      return incoming().keys().hasOnly([
+          'productId', 'costPrice', 'supplierName', 'internalNotes',
+          'createdAt', 'createdBy', 'updatedAt', 'updatedBy'
+        ]) &&
+        incoming().productId == productId &&
+        nullOrIntBetween(incoming().costPrice, 0, 1000000000) &&
+        boundedString(incoming().supplierName, 160) &&
+        boundedString(incoming().internalNotes, 1000) &&
+        auditedNow();
+    }
+
+    match /productPrivate/{productId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && isValidProductPrivate(productId) && createdNow();
+      allow update: if isAdmin() && isValidProductPrivate(productId) && createdImmutable();
       allow delete: if isAdmin();
     }
 

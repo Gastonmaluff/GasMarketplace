@@ -27,10 +27,12 @@ import {
 import { CatalogError, getCatalogContext } from '../shared/catalog-context';
 import { validateProductDraft } from './product.validation';
 import type {
+  AdminProduct,
   EditableProductImage,
   Product,
   ProductDraft,
   ProductImage,
+  ProductPrivate,
   StockAdjustmentInput,
   StockMovement,
 } from './product.types';
@@ -70,7 +72,6 @@ export function toProduct(snapshot: DocumentSnapshot): Product {
       ? { primaryCategoryId: data.primaryCategoryId }
       : {}),
     ...(typeof data.compareAtPrice === 'number' ? { compareAtPrice: data.compareAtPrice } : {}),
-    ...(typeof data.costPrice === 'number' ? { costPrice: data.costPrice } : {}),
     ...(typeof data.lowStockThreshold === 'number'
       ? { lowStockThreshold: data.lowStockThreshold }
       : {}),
@@ -80,19 +81,55 @@ export function toProduct(snapshot: DocumentSnapshot): Product {
   };
 }
 
+export function toProductPrivate(
+  snapshot: DocumentSnapshot,
+  productId = snapshot.id,
+): ProductPrivate {
+  const data = snapshot.data() ?? {};
+  const updatedAt = data.updatedAt as Timestamp | undefined;
+  return {
+    productId,
+    ...(typeof data.costPrice === 'number' ? { costPrice: data.costPrice } : {}),
+    ...(typeof data.supplierName === 'string' && data.supplierName !== ''
+      ? { supplierName: data.supplierName }
+      : {}),
+    ...(typeof data.internalNotes === 'string' && data.internalNotes !== ''
+      ? { internalNotes: data.internalNotes }
+      : {}),
+    ...(updatedAt && typeof updatedAt.toMillis === 'function'
+      ? { updatedAtMillis: updatedAt.toMillis() }
+      : {}),
+  };
+}
+
+async function loadProductPrivate(productId: string): Promise<ProductPrivate> {
+  const { database } = getCatalogContext();
+  const snapshot = await getDoc(doc(database, 'productPrivate', productId));
+  return snapshot.exists() ? toProductPrivate(snapshot, productId) : { productId };
+}
+
+async function withPrivateData(products: Product[]): Promise<AdminProduct[]> {
+  const privateDocs = await Promise.all(products.map((product) => loadProductPrivate(product.id)));
+  return products.map((product, index) => ({
+    ...product,
+    ...(privateDocs[index] ?? { productId: product.id }),
+  }));
+}
+
 /** Listado administrativo completo, ordenado por última actualización. */
-export async function listProducts(): Promise<Product[]> {
+export async function listProducts(): Promise<AdminProduct[]> {
   const { database } = getCatalogContext();
   const snapshot = await getDocs(
     query(collection(database, 'products'), orderBy('updatedAt', 'desc'), queryLimit(MAX_PRODUCTS)),
   );
-  return snapshot.docs.map(toProduct);
+  return withPrivateData(snapshot.docs.map(toProduct));
 }
 
-export async function getProduct(productId: string): Promise<Product | null> {
+export async function getProduct(productId: string): Promise<AdminProduct | null> {
   const { database } = getCatalogContext();
   const snapshot = await getDoc(doc(database, 'products', productId));
-  return snapshot.exists() ? toProduct(snapshot) : null;
+  if (!snapshot.exists()) return null;
+  return { ...toProduct(snapshot), ...(await loadProductPrivate(productId)) };
 }
 
 async function readAllowNegativeStock(): Promise<boolean> {
@@ -163,6 +200,7 @@ export async function saveProduct({
   const productRef = productId
     ? doc(database, 'products', productId)
     : doc(collection(database, 'products'));
+  const productPrivateRef = doc(database, 'productPrivate', productRef.id);
 
   const sku = normalizeCode(draft.sku);
   const barcode = normalizeCode(draft.barcode);
@@ -200,7 +238,9 @@ export async function saveProduct({
       if (productId && !existingSnapshot?.exists()) {
         throw new CatalogError(['El producto que intentás editar ya no existe.']);
       }
+      const existingPrivateSnapshot = productId ? await transaction.get(productPrivateRef) : null;
       const existing = existingSnapshot?.data() ?? {};
+      const existingPrivate = existingPrivateSnapshot?.data() ?? {};
       const previousSlug = typeof existing.slug === 'string' ? existing.slug : '';
       const previousSku = typeof existing.sku === 'string' ? existing.sku : '';
       const previousBarcode = typeof existing.barcode === 'string' ? existing.barcode : '';
@@ -251,7 +291,6 @@ export async function saveProduct({
         primaryCategoryId: draft.primaryCategoryId,
         price: draft.price,
         compareAtPrice: draft.compareAtPrice,
-        costPrice: draft.costPrice,
         stock: draft.stock,
         lowStockThreshold: draft.lowStockThreshold,
         trackStock: draft.trackStock,
@@ -262,6 +301,18 @@ export async function saveProduct({
         searchTokens: buildSearchTokens([draft.name, sku, barcode]),
         createdAt: productId ? existing.createdAt : serverTimestamp(),
         createdBy: productId ? existing.createdBy : uid,
+        updatedAt: serverTimestamp(),
+        updatedBy: uid,
+      });
+      transaction.set(productPrivateRef, {
+        productId: productRef.id,
+        costPrice: draft.costPrice,
+        supplierName: draft.supplierName.trim(),
+        internalNotes: draft.internalNotes.trim(),
+        createdAt: productId
+          ? (existingPrivate.createdAt ?? existing.createdAt)
+          : serverTimestamp(),
+        createdBy: productId ? (existingPrivate.createdBy ?? existing.createdBy) : uid,
         updatedAt: serverTimestamp(),
         updatedBy: uid,
       });
@@ -342,6 +393,7 @@ export async function deleteProduct(productId: string): Promise<void> {
     if (typeof data.barcode === 'string' && data.barcode !== '') {
       transaction.delete(doc(database, 'productBarcodes', normalizeCode(data.barcode)));
     }
+    transaction.delete(doc(database, 'productPrivate', productId));
   });
 
   for (const path of imagePaths) {
