@@ -1790,6 +1790,12 @@ html[data-density='compact'] {
   margin: 0;
   font-size: 1.05rem;
 }
+.admin-section__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
 .admin-section__toggles {
   display: grid;
   gap: 0.75rem;
