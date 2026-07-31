@@ -54,6 +54,21 @@ function validCategory(uid: string) {
   };
 }
 
+function validSupplier(uid: string) {
+  return {
+    name: 'Distribuidora Sur',
+    normalizedName: 'distribuidora sur',
+    contactName: 'Ana',
+    phone: '0981 000 000',
+    notes: '',
+    active: true,
+    createdAt: serverTimestamp(),
+    createdBy: uid,
+    updatedAt: serverTimestamp(),
+    updatedBy: uid,
+  };
+}
+
 function validProduct(uid: string) {
   return {
     name: 'Yerba Mate Selecta 1kg',
@@ -86,6 +101,7 @@ function validProductPrivate(uid: string, productId = 'ok') {
   return {
     productId,
     costPrice: 18000,
+    supplierId: '',
     supplierName: 'Proveedor demo',
     internalNotes: 'Solo visible para administradores.',
     createdAt: serverTimestamp(),
@@ -236,6 +252,29 @@ describe('categories', () => {
         createdAt: seededTimestamp,
         name: 'Bebidas frías',
       }),
+    );
+  });
+});
+
+describe('suppliers', () => {
+  it('los proveedores son solo administrativos (nunca públicos)', async () => {
+    await seed('suppliers/one', validSupplier(ADMIN_UID));
+    await assertFails(getDoc(doc(visitorDb(), 'suppliers/one')));
+    await assertFails(getDoc(doc(plainDb(), 'suppliers/one')));
+    await assertSucceeds(getDoc(doc(adminDb(), 'suppliers/one')));
+  });
+
+  it('un admin crea un proveedor válido y no uno con esquema inválido', async () => {
+    await assertSucceeds(setDoc(doc(adminDb(), 'suppliers/ok'), validSupplier(ADMIN_UID)));
+    await assertFails(setDoc(doc(plainDb(), 'suppliers/x'), validSupplier(PLAIN_UID)));
+    await assertFails(
+      setDoc(doc(adminDb(), 'suppliers/extra'), {
+        ...validSupplier(ADMIN_UID),
+        campoExtra: 'malicioso',
+      }),
+    );
+    await assertFails(
+      setDoc(doc(adminDb(), 'suppliers/no-name'), { ...validSupplier(ADMIN_UID), name: '' }),
     );
   });
 });

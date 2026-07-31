@@ -168,6 +168,30 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ----------------------- suppliers -----------------------
+    // Datos internos: nunca visibles para el storefront (solo admin).
+
+    function isValidSupplier() {
+      return incoming().keys().hasOnly([
+          'name', 'normalizedName', 'contactName', 'phone', 'notes',
+          'active', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'
+        ]) &&
+        requiredString(incoming().name, 120) &&
+        boundedString(incoming().normalizedName, 120) &&
+        boundedString(incoming().contactName, 120) &&
+        boundedString(incoming().phone, 40) &&
+        boundedString(incoming().notes, 500) &&
+        incoming().active is bool &&
+        auditedNow();
+    }
+
+    match /suppliers/{supplierId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && isValidSupplier() && createdNow();
+      allow update: if isAdmin() && isValidSupplier() && createdImmutable();
+      allow delete: if isAdmin();
+    }
+
     // ------------------------ products -----------------------
 
     function isValidProduct() {
@@ -217,11 +241,12 @@ service cloud.firestore {
 
     function isValidProductPrivate(productId) {
       return incoming().keys().hasOnly([
-          'productId', 'costPrice', 'supplierName', 'internalNotes',
+          'productId', 'costPrice', 'supplierId', 'supplierName', 'internalNotes',
           'createdAt', 'createdBy', 'updatedAt', 'updatedBy'
         ]) &&
         incoming().productId == productId &&
         nullOrIntBetween(incoming().costPrice, 0, 1000000000) &&
+        boundedString(incoming().supplierId, 100) &&
         boundedString(incoming().supplierName, 160) &&
         boundedString(incoming().internalNotes, 1000) &&
         auditedNow();

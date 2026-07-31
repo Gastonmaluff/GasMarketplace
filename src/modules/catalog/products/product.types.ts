@@ -34,6 +34,9 @@ export interface Product {
 export interface ProductPrivate {
   productId: string;
   costPrice?: number;
+  /** Referencia al proveedor en la colección `suppliers`. */
+  supplierId?: string;
+  /** Nombre del proveedor denormalizado (snapshot para mostrar aunque se borre). */
   supplierName?: string;
   internalNotes?: string;
   updatedAtMillis?: number;
@@ -54,6 +57,7 @@ export interface ProductDraft {
   price: number | null;
   compareAtPrice: number | null;
   costPrice: number | null;
+  supplierId: string;
   supplierName: string;
   internalNotes: string;
   stock: number | null;

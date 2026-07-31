@@ -62,6 +62,9 @@ export function validateProductDraft(
   if (draft.costPrice !== null && (!Number.isInteger(draft.costPrice) || draft.costPrice < 0)) {
     errors.push('El costo interno debe ser un entero mayor o igual a 0.');
   }
+  if (draft.supplierId.length > 100) {
+    errors.push('El proveedor seleccionado no es válido.');
+  }
   if (draft.supplierName.length > 160) {
     errors.push('El proveedor no puede superar 160 caracteres.');
   }

@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { appConfig } from '../../../../config/app.config';
 import { Alert } from '../../../../components/ui/Alert';
 import { Button } from '../../../../components/ui/Button';
+import { Icon } from '../../../../components/ui/Icon';
 import { LoadingState } from '../../../../components/ui/LoadingState';
 import { NumericInput } from '../../../../components/ui/inputs/NumericInput';
 import { PageHeader } from '../../../../components/ui/PageHeader';
@@ -14,6 +15,9 @@ import { CatalogError } from '../../shared/catalog-context';
 import { CategoryQuickCreateModal } from '../../categories/components/CategoryQuickCreateModal';
 import { listCategories } from '../../categories/category.service';
 import type { Category } from '../../categories/category.types';
+import { SupplierQuickCreateModal } from '../../suppliers/components/SupplierQuickCreateModal';
+import { listSuppliers } from '../../suppliers/supplier.service';
+import type { Supplier } from '../../suppliers/supplier.types';
 import { ProductImagesEditor } from '../components/ProductImagesEditor';
 import { adjustStock, getProduct, listStockMovements, saveProduct } from '../product.service';
 import {
@@ -35,6 +39,7 @@ const emptyDraft: ProductDraft = {
   price: null,
   compareAtPrice: null,
   costPrice: null,
+  supplierId: '',
   supplierName: '',
   internalNotes: '',
   stock: 0,
@@ -63,6 +68,7 @@ export function AdminProductFormPage() {
   const [draft, setDraft] = useState<ProductDraft | null>(isNew ? emptyDraft : null);
   const [images, setImages] = useState<EditableProductImage[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [dirty, setDirty] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -72,6 +78,8 @@ export function AdminProductFormPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
 
   const [newStock, setNewStock] = useState<number | null>(null);
   const [adjustReason, setAdjustReason] = useState('');
@@ -83,6 +91,9 @@ export function AdminProductFormPage() {
     const loads: Promise<void>[] = [
       listCategories().then((loaded) => {
         if (!cancelled) setCategories(loaded);
+      }),
+      listSuppliers().then((loaded) => {
+        if (!cancelled) setSuppliers(loaded);
       }),
     ];
     if (!isNew) {
@@ -105,6 +116,7 @@ export function AdminProductFormPage() {
             price: product.price,
             compareAtPrice: product.compareAtPrice ?? null,
             costPrice: product.costPrice ?? null,
+            supplierId: product.supplierId ?? '',
             supplierName: product.supplierName ?? '',
             internalNotes: product.internalNotes ?? '',
             stock: product.stock,
@@ -190,6 +202,16 @@ export function AdminProductFormPage() {
       categoryIds: nextIds,
       primaryCategoryId: draft.primaryCategoryId === '' ? category.id : draft.primaryCategoryId,
     });
+  };
+
+  const handleSupplierCreated = (supplier: Supplier) => {
+    setSuppliers((current) =>
+      [...current, supplier].sort((first, second) =>
+        first.normalizedName.localeCompare(second.normalizedName),
+      ),
+    );
+    setSupplierModalOpen(false);
+    update({ supplierId: supplier.id, supplierName: supplier.name });
   };
 
   const toggleCategory = (categoryId: string, selected: boolean) => {
@@ -289,6 +311,12 @@ export function AdminProductFormPage() {
             required
             value={draft.name}
           />
+          <TextField
+            helpText="Opcional; identificador interno único."
+            label="Código interno (SKU)"
+            onChange={(event) => update({ sku: event.currentTarget.value })}
+            value={draft.sku}
+          />
           <div className="field--full">
             <TextField
               helpText="Resumen corto para listados (máximo 200 caracteres)."
@@ -307,12 +335,6 @@ export function AdminProductFormPage() {
               value={draft.description}
             />
           </div>
-          <TextField
-            helpText="Opcional; debe ser único."
-            label="SKU"
-            onChange={(event) => update({ sku: event.currentTarget.value })}
-            value={draft.sku}
-          />
           <TextField
             helpText="Opcional; debe ser único."
             label="Código de barras"
@@ -335,25 +357,74 @@ export function AdminProductFormPage() {
           </p>
         ) : (
           <>
-            <div className="admin-section__toggles">
-              {categories.map((category) => {
-                const selected = draft.categoryIds.includes(category.id);
-                return (
-                  <label className="checkbox-field" key={category.id}>
-                    <input
-                      checked={selected}
-                      disabled={!selected && draft.categoryIds.length >= MAX_PRODUCT_CATEGORIES}
-                      onChange={(event) => toggleCategory(category.id, event.currentTarget.checked)}
-                      type="checkbox"
-                    />
-                    <span>
-                      {category.name}
-                      {category.active ? null : <small>Inactiva</small>}
-                    </span>
-                  </label>
-                );
-              })}
+            <div className="picker">
+              <button
+                aria-expanded={categoryPickerOpen}
+                className="picker__trigger"
+                onClick={() => setCategoryPickerOpen((open) => !open)}
+                type="button"
+              >
+                <span>
+                  {draft.categoryIds.length === 0
+                    ? 'Seleccionar categorías'
+                    : `${draft.categoryIds.length} de ${MAX_PRODUCT_CATEGORIES} seleccionada${
+                        draft.categoryIds.length === 1 ? '' : 's'
+                      }`}
+                </span>
+                <Icon name="chevron-down" />
+              </button>
+              {categoryPickerOpen ? (
+                <>
+                  <div
+                    className="picker__backdrop"
+                    onClick={() => setCategoryPickerOpen(false)}
+                    role="presentation"
+                  />
+                  <div className="picker__panel">
+                    {categories.map((category) => {
+                      const selected = draft.categoryIds.includes(category.id);
+                      return (
+                        <label className="checkbox-field" key={category.id}>
+                          <input
+                            checked={selected}
+                            disabled={
+                              !selected && draft.categoryIds.length >= MAX_PRODUCT_CATEGORIES
+                            }
+                            onChange={(event) =>
+                              toggleCategory(category.id, event.currentTarget.checked)
+                            }
+                            type="checkbox"
+                          />
+                          <span>
+                            {category.name}
+                            {category.active ? null : <small>Inactiva</small>}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : null}
             </div>
+            {draft.categoryIds.length > 0 ? (
+              <div className="chip-list">
+                {draft.categoryIds.map((categoryId) => {
+                  const category = categories.find((item) => item.id === categoryId);
+                  return (
+                    <span className="chip" key={categoryId}>
+                      {category?.name ?? categoryId}
+                      <button
+                        aria-label={`Quitar ${category?.name ?? 'categoría'}`}
+                        onClick={() => toggleCategory(categoryId, false)}
+                        type="button"
+                      >
+                        <Icon name="close" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            ) : null}
             {draft.categoryIds.length > 0 ? (
               <div className="text-field">
                 <label htmlFor="primary-category">Categoría principal</label>
@@ -404,12 +475,43 @@ export function AdminProductFormPage() {
             onValueChange={(value) => update({ costPrice: value })}
             value={draft.costPrice}
           />
-          <TextField
-            helpText="Uso interno; no se muestra en la tienda."
-            label="Proveedor"
-            onChange={(event) => update({ supplierName: event.currentTarget.value })}
-            value={draft.supplierName}
-          />
+          <div className="text-field">
+            <label htmlFor="product-supplier">Proveedor</label>
+            <div className="field-with-action">
+              <select
+                className="text-field__input"
+                id="product-supplier"
+                onChange={(event) => {
+                  const supplierId = event.currentTarget.value;
+                  const supplier = suppliers.find((item) => item.id === supplierId);
+                  update({ supplierId, supplierName: supplier?.name ?? '' });
+                }}
+                value={draft.supplierId}
+              >
+                <option value="">Sin proveedor</option>
+                {suppliers.map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                    {supplier.active ? '' : ' (inactivo)'}
+                  </option>
+                ))}
+                {draft.supplierId && !suppliers.some((item) => item.id === draft.supplierId) ? (
+                  <option value={draft.supplierId}>
+                    {draft.supplierName || 'Proveedor actual'}
+                  </option>
+                ) : null}
+              </select>
+              <Button
+                onClick={() => setSupplierModalOpen(true)}
+                size="small"
+                type="button"
+                variant="secondary"
+              >
+                Nuevo proveedor
+              </Button>
+            </div>
+            <small className="text-field__message">Uso interno; no se muestra en la tienda.</small>
+          </div>
           <div className="field--full text-field">
             <label htmlFor="product-internal-notes">Notas internas</label>
             <textarea
@@ -574,6 +676,13 @@ export function AdminProductFormPage() {
         <CategoryQuickCreateModal
           onClose={() => setCategoryModalOpen(false)}
           onCreated={handleCategoryCreated}
+        />
+      ) : null}
+
+      {supplierModalOpen ? (
+        <SupplierQuickCreateModal
+          onClose={() => setSupplierModalOpen(false)}
+          onCreated={handleSupplierCreated}
         />
       ) : null}
 

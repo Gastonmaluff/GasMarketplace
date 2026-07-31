@@ -13,6 +13,7 @@ const adminNavigation = [
   { icon: 'dashboard', label: 'Inicio', to: '/admin', end: true },
   { icon: 'box', label: 'Productos', to: '/admin/productos' },
   { icon: 'tag', label: 'Categorías', to: '/admin/categorias' },
+  { icon: 'truck', label: 'Proveedores', to: '/admin/proveedores' },
   { icon: 'settings', label: 'Configuración', to: '/admin/configuracion' },
 ] satisfies readonly SidebarNavigationItem[];
 

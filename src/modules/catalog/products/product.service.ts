@@ -96,6 +96,9 @@ export function toProductPrivate(
   return {
     productId,
     ...(typeof data.costPrice === 'number' ? { costPrice: data.costPrice } : {}),
+    ...(typeof data.supplierId === 'string' && data.supplierId !== ''
+      ? { supplierId: data.supplierId }
+      : {}),
     ...(typeof data.supplierName === 'string' && data.supplierName !== ''
       ? { supplierName: data.supplierName }
       : {}),
@@ -335,6 +338,7 @@ export async function saveProduct({
         withoutUndefined({
           productId: productRef.id,
           costPrice: draft.costPrice,
+          supplierId: draft.supplierId,
           supplierName: draft.supplierName.trim(),
           internalNotes: draft.internalNotes.trim(),
           createdAt: productId
