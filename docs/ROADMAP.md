@@ -58,6 +58,9 @@ Todo terminado.
 - ☑ Carrito (`cart`) client-side con persistencia local (`localStorage`),
   contador real en el header, stepper de cantidades y pedido por WhatsApp.
   Revalidación de stock contra Firestore pendiente para el checkout.
+- ☑ Base del módulo `orders`: modelo de dominio, lógica pura (totales,
+  máquina de estados, correlativo) y tests. Plan del resto en
+  `docs/FASE-4-PLAN.md`.
 - ☐ Checkout de invitado (zonas de entrega, confirmación).
 - ☐ Cloud Function `createOrder` transaccional con pruebas contra el emulador.
 - ☐ Pedidos (panel: listado, detalle, historial de eventos).
