@@ -109,13 +109,17 @@ export function normalizePublicSettings(settings: PublicStoreSettings): PublicSt
     city: settings.city.trim(),
     orderConfirmationMessage: settings.orderConfirmationMessage.trim(),
     deliveryZones: settings.deliveryZones.map((zone, index) => {
-      const { description, ...rest } = zone;
+      const { description, carrierName, cities, ...rest } = zone;
       const trimmedDescription = description?.trim();
+      const trimmedCarrier = carrierName?.trim();
+      const cleanCities = (cities ?? []).map((city) => city.trim()).filter((city) => city !== '');
       return {
         ...rest,
         name: zone.name.trim().replace(/\s+/gu, ' '),
         order: index,
         ...(trimmedDescription ? { description: trimmedDescription } : {}),
+        ...(trimmedCarrier ? { carrierName: trimmedCarrier } : {}),
+        ...(cleanCities.length > 0 ? { cities: cleanCities } : {}),
       };
     }),
   };

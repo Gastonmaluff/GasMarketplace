@@ -1,6 +1,9 @@
 import { isValidParaguayPhone } from '../../utils/formatters/paraguay-phone';
 import {
+  MAX_CARRIER_NAME_LENGTH,
+  MAX_CITY_NAME_LENGTH,
   MAX_DELIVERY_ZONES,
+  MAX_ZONE_CITIES,
   PAYMENT_METHODS,
   type PaymentMethod,
   type PrivateStoreSettings,
@@ -82,6 +85,17 @@ export function validatePublicSettings(settings: PublicStoreSettings): SettingsV
     }
     if (zone.cost > MAX_ZONE_COST) {
       errors.push(`El costo de la zona "${zone.name}" supera el máximo permitido.`);
+    }
+    if (zone.carrierName !== undefined && zone.carrierName.length > MAX_CARRIER_NAME_LENGTH) {
+      errors.push(`La transportadora de la zona "${zone.name}" tiene un nombre demasiado largo.`);
+    }
+    if (zone.cities !== undefined) {
+      if (zone.cities.length > MAX_ZONE_CITIES) {
+        errors.push(`La zona "${zone.name}" tiene demasiadas ciudades.`);
+      }
+      if (zone.cities.some((city) => city.trim() === '' || city.length > MAX_CITY_NAME_LENGTH)) {
+        errors.push(`La zona "${zone.name}" tiene ciudades vacías o demasiado largas.`);
+      }
     }
     if (zoneIds.has(zone.id)) {
       errors.push('Hay zonas de entrega con identificadores duplicados.');

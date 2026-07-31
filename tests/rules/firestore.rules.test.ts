@@ -182,6 +182,12 @@ describe('settings', () => {
         acceptedPaymentMethods: ['cash', 'crypto'],
       }),
     );
+    await assertSucceeds(
+      setDoc(doc(adminDb(), 'settings/public'), {
+        ...validPublic,
+        acceptedPaymentMethods: ['cash', 'bank_transfer', 'pay_on_pickup', 'cash_on_delivery'],
+      }),
+    );
   });
 });
 
