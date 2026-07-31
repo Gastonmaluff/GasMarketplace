@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 
 import { LoadingState } from '../../../components/ui/LoadingState';
+import { CartProvider } from '../../cart';
 import { useStorefrontData } from '../hooks/useStorefrontData';
 import { StorefrontDataContext } from '../hooks/storefront-context';
 import { buildWhatsappLink } from '../utils/whatsapp';
@@ -31,18 +32,20 @@ export function StorefrontLayout() {
 
   return (
     <StorefrontDataContext.Provider value={data}>
-      <div className="store-shell">
-        <a className="skip-link" href="#main-content">
-          Saltar al contenido
-        </a>
-        <TopPromoBar />
-        <StorefrontHeader categories={data.categories} settings={data.settings} />
-        <main className="store-main" id="main-content">
-          <Outlet />
-        </main>
-        <StorefrontFooter settings={data.settings} />
-        {whatsappLink ? <WhatsappFab href={whatsappLink} /> : null}
-      </div>
+      <CartProvider>
+        <div className="store-shell">
+          <a className="skip-link" href="#main-content">
+            Saltar al contenido
+          </a>
+          <TopPromoBar />
+          <StorefrontHeader categories={data.categories} settings={data.settings} />
+          <main className="store-main" id="main-content">
+            <Outlet />
+          </main>
+          <StorefrontFooter settings={data.settings} />
+          {whatsappLink ? <WhatsappFab href={whatsappLink} /> : null}
+        </div>
+      </CartProvider>
     </StorefrontDataContext.Provider>
   );
 }

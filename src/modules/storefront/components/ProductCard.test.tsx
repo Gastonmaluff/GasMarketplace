@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ProductCard } from './ProductCard';
 import { StorefrontDataContext, type StorefrontData } from '../hooks/storefront-context';
+import { CartProvider } from '../../cart';
 import { createDefaultPublicSettings } from '../../store-settings';
 import type { Product } from '../../catalog';
 
@@ -35,7 +36,9 @@ function renderCard(node: React.ReactNode) {
   };
   return render(
     <MemoryRouter>
-      <StorefrontDataContext.Provider value={data}>{node}</StorefrontDataContext.Provider>
+      <StorefrontDataContext.Provider value={data}>
+        <CartProvider>{node}</CartProvider>
+      </StorefrontDataContext.Provider>
     </MemoryRouter>,
   );
 }

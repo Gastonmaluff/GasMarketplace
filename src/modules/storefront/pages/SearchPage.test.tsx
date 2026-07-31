@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { CartProvider } from '../../cart';
 import { createDefaultPublicSettings } from '../../store-settings';
 import { StorefrontDataContext, type StorefrontData } from '../hooks/storefront-context';
 import type { Product } from '../../catalog';
@@ -43,7 +44,9 @@ function renderSearch(initialEntry: string) {
   return render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <StorefrontDataContext.Provider value={data}>
-        <SearchPage />
+        <CartProvider>
+          <SearchPage />
+        </CartProvider>
       </StorefrontDataContext.Provider>
     </MemoryRouter>,
   );

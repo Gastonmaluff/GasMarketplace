@@ -1,6 +1,7 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 import { Icon } from '../../../components/ui/Icon';
+import { AddToCartButton } from '../../cart';
 import type { Product } from '../../catalog';
 import { getAvailability } from '../utils/availability';
 import { formatPrice, savingsPercent } from '../utils/format';
@@ -13,7 +14,6 @@ interface ProductCardProps {
 
 /** Tarjeta de producto retail. No muestra costo, stock exacto ni datos internos. */
 export function ProductCard({ product, categoryName }: ProductCardProps) {
-  const navigate = useNavigate();
   const primaryImage = product.images.find((image) => image.isPrimary) ?? product.images[0] ?? null;
   const availability = getAvailability(product);
   const savings = savingsPercent(product.price, product.compareAtPrice);
@@ -58,13 +58,12 @@ export function ProductCard({ product, categoryName }: ProductCardProps) {
         </span>
       </Link>
 
-      <button className="product-card__buy" onClick={() => navigate(productPath)} type="button">
-        <Icon name="cart" size={18} />
-        <span>
-          Comprar
-          <small>Pagás al recibir</small>
-        </span>
-      </button>
+      <AddToCartButton
+        className="product-card__buy"
+        label="Comprar"
+        product={product}
+        sublabel="Pagás al recibir"
+      />
     </article>
   );
 }
