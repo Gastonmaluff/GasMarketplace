@@ -11,6 +11,7 @@ import { TextField } from '../../../../components/ui/TextField';
 import { Toast } from '../../../../components/ui/Toast';
 import { slugify } from '../../shared/text';
 import { CatalogError } from '../../shared/catalog-context';
+import { CategoryQuickCreateModal } from '../../categories/components/CategoryQuickCreateModal';
 import { listCategories } from '../../categories/category.service';
 import type { Category } from '../../categories/category.types';
 import { ProductImagesEditor } from '../components/ProductImagesEditor';
@@ -69,6 +70,7 @@ export function AdminProductFormPage() {
   const [imageProgress, setImageProgress] = useState<Record<string, number>>({});
   const [toast, setToast] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   const [newStock, setNewStock] = useState<number | null>(null);
   const [adjustReason, setAdjustReason] = useState('');
@@ -167,6 +169,24 @@ export function AdminProductFormPage() {
   const updateImages = (next: EditableProductImage[]) => {
     setDirty(true);
     setImages(next);
+  };
+
+  const handleCategoryCreated = (category: Category) => {
+    setCategories((current) =>
+      [...current, category].sort(
+        (first, second) => first.order - second.order || first.name.localeCompare(second.name),
+      ),
+    );
+    setCategoryModalOpen(false);
+    if (draft.categoryIds.length >= MAX_PRODUCT_CATEGORIES) {
+      setToast('Categoría creada. Quitá alguna para poder asignarla a este producto.');
+      return;
+    }
+    const nextIds = [...draft.categoryIds, category.id];
+    update({
+      categoryIds: nextIds,
+      primaryCategoryId: draft.primaryCategoryId === '' ? category.id : draft.primaryCategoryId,
+    });
   };
 
   const toggleCategory = (categoryId: string, selected: boolean) => {
@@ -308,10 +328,15 @@ export function AdminProductFormPage() {
       </section>
 
       <section className="admin-section" aria-labelledby="product-categories">
-        <h2 id="product-categories">Categorías</h2>
+        <div className="admin-section__heading">
+          <h2 id="product-categories">Categorías</h2>
+          <Button onClick={() => setCategoryModalOpen(true)} size="small" variant="secondary">
+            Nueva categoría
+          </Button>
+        </div>
         {categories.length === 0 ? (
           <p className="admin-page__note">
-            Todavía no hay categorías. Podés crearlas en Categorías y asignarlas después.
+            Todavía no hay categorías. Creá una con “Nueva categoría” o desde la sección Categorías.
           </p>
         ) : (
           <>
@@ -532,6 +557,13 @@ export function AdminProductFormPage() {
             <p className="admin-page__note">Sin movimientos registrados todavía.</p>
           )}
         </section>
+      ) : null}
+
+      {categoryModalOpen ? (
+        <CategoryQuickCreateModal
+          onClose={() => setCategoryModalOpen(false)}
+          onCreated={handleCategoryCreated}
+        />
       ) : null}
 
       {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}

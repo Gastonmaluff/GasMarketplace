@@ -1,5 +1,6 @@
 export { AdminCategoriesPage } from './categories/pages/AdminCategoriesPage';
 export { AdminCategoryFormPage } from './categories/pages/AdminCategoryFormPage';
+export { CategoryQuickCreateModal } from './categories/components/CategoryQuickCreateModal';
 export { AdminProductsPage } from './products/pages/AdminProductsPage';
 export { AdminProductFormPage } from './products/pages/AdminProductFormPage';
 export { listCategories } from './categories/category.service';
