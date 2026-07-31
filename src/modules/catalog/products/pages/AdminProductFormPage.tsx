@@ -64,7 +64,6 @@ export function AdminProductFormPage() {
   const [images, setImages] = useState<EditableProductImage[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [movements, setMovements] = useState<StockMovement[]>([]);
-  const [slugTouched, setSlugTouched] = useState(!isNew);
   const [dirty, setDirty] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -283,20 +282,12 @@ export function AdminProductFormPage() {
             label="Nombre"
             onChange={(event) => {
               const name = event.currentTarget.value;
-              update(slugTouched ? { name } : { name, slug: slugify(name) });
+              // El slug (URL) se genera solo desde el nombre en productos nuevos y
+              // se congela al editar para no romper enlaces ya publicados.
+              update(isNew ? { name, slug: slugify(name) } : { name });
             }}
             required
             value={draft.name}
-          />
-          <TextField
-            helpText="Se genera desde el nombre; podés ajustarlo."
-            label="Slug"
-            onChange={(event) => {
-              setSlugTouched(true);
-              update({ slug: event.currentTarget.value });
-            }}
-            required
-            value={draft.slug}
           />
           <div className="field--full">
             <TextField
