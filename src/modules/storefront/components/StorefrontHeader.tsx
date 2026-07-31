@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 
 import { appConfig } from '../../../config/app.config';
 import { Icon } from '../../../components/ui/Icon';
+import { useCart } from '../../cart';
 import type { Category } from '../../catalog';
 import type { PublicStoreSettings } from '../../store-settings';
 import { Brand48 } from './Brand48';
@@ -14,6 +15,7 @@ interface StorefrontHeaderProps {
 
 export function StorefrontHeader({ categories, settings }: StorefrontHeaderProps) {
   const navigate = useNavigate();
+  const { totals } = useCart();
   const [term, setTerm] = useState('');
   const [scope, setScope] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -108,9 +110,14 @@ export function StorefrontHeader({ categories, settings }: StorefrontHeaderProps
             <Link className="store-cart" to="/carrito">
               <span className="store-cart__icon">
                 <Icon name="cart" size={26} />
-                <span aria-label="0 productos en el carrito" className="store-cart__count">
-                  0
-                </span>
+                {totals.count > 0 ? (
+                  <span
+                    aria-label={`${totals.count} productos en el carrito`}
+                    className="store-cart__count"
+                  >
+                    {totals.count > 99 ? '99+' : totals.count}
+                  </span>
+                ) : null}
               </span>
               <span className="store-cart__label">Carrito</span>
             </Link>

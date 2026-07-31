@@ -53,9 +53,11 @@ Todo terminado.
 - ○ Publicar canal live.
 - ○ Conectar dominio definitivo.
 
-## FASE 4 — Venta (pendiente)
+## FASE 4 — Venta (en progreso)
 
-- ☐ Carrito (`cart`) con persistencia local y revalidación.
+- ☑ Carrito (`cart`) client-side con persistencia local (`localStorage`),
+  contador real en el header, stepper de cantidades y pedido por WhatsApp.
+  Revalidación de stock contra Firestore pendiente para el checkout.
 - ☐ Checkout de invitado (zonas de entrega, confirmación).
 - ☐ Cloud Function `createOrder` transaccional con pruebas contra el emulador.
 - ☐ Pedidos (panel: listado, detalle, historial de eventos).

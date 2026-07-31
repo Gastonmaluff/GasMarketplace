@@ -4,8 +4,8 @@ import { Link, useParams } from 'react-router-dom';
 import { appConfig } from '../../../config/app.config';
 import { Alert } from '../../../components/ui/Alert';
 import { Badge } from '../../../components/ui/Badge';
-import { Icon } from '../../../components/ui/Icon';
 import { LoadingState } from '../../../components/ui/LoadingState';
+import { AddToCartButton } from '../../cart';
 import { getActiveProductBySlug, listRelatedProducts, type Product } from '../../catalog';
 import { ProductGallery } from '../components/ProductGallery';
 import { ProductGrid } from '../components/ProductGrid';
@@ -137,14 +137,11 @@ export function ProductDetailPage() {
           {product.shortDescription ? <p>{product.shortDescription}</p> : null}
 
           <div className="product-detail__actions">
-            <button
+            <AddToCartButton
               className="button button--primary"
-              disabled
-              title="Disponible próximamente"
-              type="button"
-            >
-              <Icon name="cart" size={18} /> Comprar · Pagás al recibir
-            </button>
+              label="Agregar al carrito"
+              product={product}
+            />
             {whatsappLink ? (
               <a
                 className="button button--ghost"
