@@ -27,7 +27,6 @@ export function CategoryQuickCreateModal({ onClose, onCreated }: CategoryQuickCr
 
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
-  const [slugTouched, setSlugTouched] = useState(false);
   const [active, setActive] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -112,20 +111,11 @@ export function CategoryQuickCreateModal({ onClose, onCreated }: CategoryQuickCr
                 onChange={(event) => {
                   const nextName = event.currentTarget.value;
                   setName(nextName);
-                  if (!slugTouched) setSlug(slugify(nextName));
+                  // El slug (URL) se genera solo desde el nombre; no se muestra.
+                  setSlug(slugify(nextName));
                 }}
                 required
                 value={name}
-              />
-              <TextField
-                helpText="Se genera desde el nombre; podés ajustarlo."
-                label="Slug"
-                onChange={(event) => {
-                  setSlugTouched(true);
-                  setSlug(event.currentTarget.value);
-                }}
-                required
-                value={slug}
               />
               <label className="checkbox-field">
                 <input

@@ -21,7 +21,6 @@ export function AdminCategoryFormPage() {
   const isNew = categoryId === undefined;
 
   const [draft, setDraft] = useState<CategoryDraft | null>(isNew ? emptyDraft : null);
-  const [slugTouched, setSlugTouched] = useState(!isNew);
   const [existingImageUrl, setExistingImageUrl] = useState<string | undefined>();
   const [imageFile, setImageFile] = useState<File | null | undefined>();
   const [imageProgress, setImageProgress] = useState<number | null>(null);
@@ -130,20 +129,12 @@ export function AdminCategoryFormPage() {
             label="Nombre"
             onChange={(event) => {
               const name = event.currentTarget.value;
-              update(slugTouched ? { name } : { name, slug: slugify(name) });
+              // El slug (URL) se genera solo desde el nombre en categorías nuevas y
+              // se congela al editar para no romper enlaces ya publicados.
+              update(isNew ? { name, slug: slugify(name) } : { name });
             }}
             required
             value={draft.name}
-          />
-          <TextField
-            helpText="Se genera desde el nombre; podés ajustarlo antes de guardar."
-            label="Slug"
-            onChange={(event) => {
-              setSlugTouched(true);
-              update({ slug: event.currentTarget.value });
-            }}
-            required
-            value={draft.slug}
           />
           <div className="field--full">
             <TextField
