@@ -9,6 +9,7 @@ function form(overrides: Partial<CheckoutFormState> = {}): CheckoutFormState {
     customerEmail: '',
     customerAddress: '',
     deliveryMethod: 'pickup',
+    deliveryCity: '',
     deliveryZoneId: '',
     paymentMethod: 'cash',
     notes: '',
@@ -41,12 +42,27 @@ describe('validateCheckoutForm', () => {
     ).toBeGreaterThan(0);
   });
 
-  it('exige zona de entrega cuando el método es delivery', () => {
+  it('exige elegir ciudad cuando el método es delivery', () => {
     expect(
       validateCheckoutForm(form({ deliveryMethod: 'delivery' }), options).length,
     ).toBeGreaterThan(0);
+  });
+
+  it('rechaza cuando la ciudad no resolvió ninguna zona (deliveryZoneId vacío)', () => {
     expect(
-      validateCheckoutForm(form({ deliveryMethod: 'delivery', deliveryZoneId: 'z1' }), options),
+      validateCheckoutForm(
+        form({ deliveryMethod: 'delivery', deliveryCity: 'Villarrica' }),
+        options,
+      ).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it('acepta delivery cuando la ciudad resolvió una zona', () => {
+    expect(
+      validateCheckoutForm(
+        form({ deliveryMethod: 'delivery', deliveryCity: 'Ciudad del Este', deliveryZoneId: 'z1' }),
+        options,
+      ),
     ).toEqual([]);
   });
 

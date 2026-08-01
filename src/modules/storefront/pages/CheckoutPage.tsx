@@ -12,6 +12,8 @@ import { getActiveProductById, type Product } from '../../catalog';
 import {
   buildRevalidationOutcome,
   CheckoutError,
+  listKnownCities,
+  resolveZoneForCity,
   submitOrder,
   validateCheckoutForm,
   type CheckoutFormState,
@@ -23,12 +25,15 @@ import { useStorefrontContext } from '../hooks/storefront-context';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 import { formatPrice } from '../utils/format';
 
+const OTHER_CITY_VALUE = '__otra_ciudad__';
+
 const emptyForm: CheckoutFormState = {
   customerName: '',
   customerPhone: '',
   customerEmail: '',
   customerAddress: '',
   deliveryMethod: 'pickup',
+  deliveryCity: '',
   deliveryZoneId: '',
   paymentMethod: '',
   notes: '',
@@ -100,6 +105,16 @@ export function CheckoutPage() {
         .sort((first, second) => first.order - second.order),
     [settings.deliveryZones],
   );
+  const knownCities = useMemo(() => listKnownCities(activeZones), [activeZones]);
+  const hasCatchAllZone = activeZones.some((zone) => (zone.cities ?? []).length === 0);
+
+  const selectCity = (city: string) => {
+    const resolved =
+      city === OTHER_CITY_VALUE
+        ? activeZones.find((zone) => (zone.cities ?? []).length === 0)
+        : resolveZoneForCity(city, activeZones);
+    update({ deliveryCity: city, deliveryZoneId: resolved?.id ?? '' });
+  };
 
   const itemsSubtotal = items.reduce(
     (sum, item) =>
@@ -108,6 +123,8 @@ export function CheckoutPage() {
   );
   const selectedZone = activeZones.find((zone) => zone.id === form.deliveryZoneId);
   const deliveryCost = form.deliveryMethod === 'delivery' ? (selectedZone?.cost ?? 0) : 0;
+  const cityNotCovered =
+    form.deliveryMethod === 'delivery' && form.deliveryCity !== '' && !selectedZone;
   const total = itemsSubtotal + deliveryCost;
 
   async function handleSubmit(event: FormEvent) {
@@ -256,7 +273,9 @@ export function CheckoutPage() {
                   <input
                     checked={form.deliveryMethod === 'pickup'}
                     name="deliveryMethod"
-                    onChange={() => update({ deliveryMethod: 'pickup', deliveryZoneId: '' })}
+                    onChange={() =>
+                      update({ deliveryMethod: 'pickup', deliveryCity: '', deliveryZoneId: '' })
+                    }
                     type="radio"
                   />
                   <span>
@@ -273,7 +292,7 @@ export function CheckoutPage() {
                     type="radio"
                   />
                   <span>
-                    Delivery<small>Elegí tu zona para ver el costo de envío.</small>
+                    Delivery<small>Elegí tu ciudad para calcular el envío.</small>
                   </span>
                 </label>
               ) : null}
@@ -282,22 +301,36 @@ export function CheckoutPage() {
             {form.deliveryMethod === 'delivery' ? (
               <>
                 <div className="text-field">
-                  <label htmlFor="checkout-zone">Zona de entrega</label>
+                  <label htmlFor="checkout-city">Ciudad</label>
                   <select
                     className="text-field__input"
-                    id="checkout-zone"
-                    onChange={(event) => update({ deliveryZoneId: event.currentTarget.value })}
+                    id="checkout-city"
+                    onChange={(event) => selectCity(event.currentTarget.value)}
                     required
-                    value={form.deliveryZoneId}
+                    value={form.deliveryCity}
                   >
-                    <option value="">Elegí una zona</option>
-                    {activeZones.map((zone) => (
-                      <option key={zone.id} value={zone.id}>
-                        {zone.name} — {formatPrice(zone.cost)}
+                    <option value="">Elegí tu ciudad</option>
+                    {knownCities.map((city) => (
+                      <option key={city} value={city}>
+                        {city}
                       </option>
                     ))}
+                    {hasCatchAllZone ? <option value={OTHER_CITY_VALUE}>Otra ciudad</option> : null}
                   </select>
                 </div>
+                {selectedZone ? (
+                  <p className="admin-page__note">
+                    Envío por {selectedZone.name}
+                    {selectedZone.carrierName ? ` (${selectedZone.carrierName})` : ''}:{' '}
+                    <strong>{formatPrice(selectedZone.cost)}</strong>
+                  </p>
+                ) : null}
+                {cityNotCovered ? (
+                  <Alert title="Todavía no llegamos ahí" tone="warning">
+                    No hacemos envíos a esa ciudad por el momento. Podés elegir retiro en local o
+                    escribirnos por WhatsApp para coordinar.
+                  </Alert>
+                ) : null}
                 <TextField
                   helpText="Calle, número y alguna referencia."
                   id={addressId}
