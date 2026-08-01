@@ -27,7 +27,8 @@ export type IconName =
   | 'trash'
   | 'filter'
   | 'dollar'
-  | 'bell';
+  | 'bell'
+  | 'storefront';
 
 interface IconProps {
   name: IconName;
@@ -80,6 +81,7 @@ const paths: Record<IconName, React.ReactNode> = {
     <path d="M12 3v18M16 7.5a4 4 0 0 0-4-2c-2.2 0-4 1.1-4 2.8 0 4.4 8 1.7 8 6 0 1.6-1.8 2.7-4 2.7a5 5 0 0 1-4.5-2.4" />
   ),
   bell: <path d="M18 9a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7ZM10 20h4" />,
+  storefront: <path d="M4 10.5 12 4l8 6.5M6 9.5V20h12V9.5" />,
 };
 
 export function Icon({ name, size = 20 }: IconProps) {

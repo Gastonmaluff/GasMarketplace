@@ -99,6 +99,14 @@ export function StorefrontHeader({ categories, settings }: StorefrontHeaderProps
           </form>
 
           <div className="store-header__actions">
+            <Link
+              aria-label="Panel administrativo"
+              className="header-icon-link"
+              title="Panel administrativo"
+              to="/admin"
+            >
+              <Icon name="shield" size={20} />
+            </Link>
             <Link className="store-account" to="/admin/login">
               <Icon name="user" size={24} />
               <span className="store-account__text">
