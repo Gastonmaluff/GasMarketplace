@@ -3,6 +3,7 @@ export { HomePage } from './pages/HomePage';
 export { CatalogPage } from './pages/CatalogPage';
 export { CategoryPage } from './pages/CategoryPage';
 export { SearchPage } from './pages/SearchPage';
+export { FaqPage } from './pages/FaqPage';
 export { ProductDetailPage } from './pages/ProductDetailPage';
 export { CartPage } from './pages/CartPage';
 export { CheckoutPage } from './pages/CheckoutPage';

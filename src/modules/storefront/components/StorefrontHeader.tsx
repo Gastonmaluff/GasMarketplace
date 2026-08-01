@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router';
 
 import { appConfig } from '../../../config/app.config';
@@ -6,6 +6,7 @@ import { Icon } from '../../../components/ui/Icon';
 import { useCart } from '../../cart';
 import type { Category } from '../../catalog';
 import type { PublicStoreSettings } from '../../store-settings';
+import { buildWhatsappLink } from '../utils/whatsapp';
 import { Brand48 } from './Brand48';
 
 interface StorefrontHeaderProps {
@@ -19,17 +20,33 @@ export function StorefrontHeader({ categories, settings }: StorefrontHeaderProps
   const [term, setTerm] = useState('');
   const [scope, setScope] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (!menuOpen) return undefined;
+    if (!menuOpen && !categoriesOpen) return undefined;
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMenuOpen(false);
+      if (event.key !== 'Escape') return;
+      setMenuOpen(false);
+      setCategoriesOpen(false);
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [menuOpen]);
+  }, [menuOpen, categoriesOpen]);
+
+  useEffect(() => {
+    if (!categoriesOpen) return undefined;
+    const handleClick = (event: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(event.target as Node)) {
+        setCategoriesOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [categoriesOpen]);
 
   const storeName = settings.storeName || appConfig.name;
+  const whatsappLink = buildWhatsappLink(settings.whatsappNumberNormalized);
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,7 +69,10 @@ export function StorefrontHeader({ categories, settings }: StorefrontHeaderProps
             aria-expanded={menuOpen}
             aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
             className="icon-button store-header__menu-toggle"
-            onClick={() => setMenuOpen((open) => !open)}
+            onClick={() => {
+              setMenuOpen((open) => !open);
+              setCategoriesOpen(false);
+            }}
             type="button"
           >
             <Icon name={menuOpen ? 'close' : 'menu'} />
@@ -133,35 +153,89 @@ export function StorefrontHeader({ categories, settings }: StorefrontHeaderProps
         </div>
       </div>
 
-      <nav aria-label="Categorías" className={`store-nav ${menuOpen ? 'store-nav--open' : ''}`}>
+      <nav
+        aria-label="Categorías y ayuda"
+        className={`store-nav ${menuOpen ? 'store-nav--open' : ''}`}
+        ref={navRef}
+      >
         <div className="store-nav__inner">
-          <NavLink
+          <button
+            aria-controls="store-category-drawer"
+            aria-expanded={categoriesOpen}
             className="store-nav__link store-nav__link--all"
-            end
-            onClick={() => setMenuOpen(false)}
-            to="/catalogo"
+            onClick={() => setCategoriesOpen((open) => !open)}
+            type="button"
           >
             <Icon name="menu" size={18} />
             Todas las categorías
-          </NavLink>
-          {categories.slice(0, 8).map((category) => (
-            <NavLink
-              className="store-nav__link"
-              key={category.id}
-              onClick={() => setMenuOpen(false)}
-              to={`/categoria/${category.slug}`}
-            >
-              {category.name}
-            </NavLink>
-          ))}
+            <Icon
+              className={`store-nav__chevron ${categoriesOpen ? 'store-nav__chevron--open' : ''}`}
+              name="chevron-down"
+              size={16}
+            />
+          </button>
           <NavLink
             className="store-nav__link store-nav__link--offers"
-            onClick={() => setMenuOpen(false)}
+            onClick={() => {
+              setMenuOpen(false);
+              setCategoriesOpen(false);
+            }}
             to="/catalogo?destacados=1"
           >
             <Icon name="tag" size={18} />
-            Ofertas
+            Ofertas del día
           </NavLink>
+          <NavLink
+            className="store-nav__link"
+            onClick={() => {
+              setMenuOpen(false);
+              setCategoriesOpen(false);
+            }}
+            to="/preguntas-frecuentes"
+          >
+            <Icon name="help" size={18} />
+            Preguntas frecuentes
+          </NavLink>
+          {whatsappLink ? (
+            <a
+              className="store-nav__link"
+              href={whatsappLink}
+              onClick={() => {
+                setMenuOpen(false);
+                setCategoriesOpen(false);
+              }}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <Icon name="message" size={18} />
+              Contacto
+            </a>
+          ) : null}
+        </div>
+
+        <div
+          className={`store-category-drawer ${categoriesOpen ? 'store-category-drawer--open' : ''}`}
+          id="store-category-drawer"
+        >
+          <div className="store-category-drawer__grid">
+            <Link
+              className="store-category-drawer__link"
+              onClick={() => setCategoriesOpen(false)}
+              to="/catalogo"
+            >
+              Ver todo el catálogo
+            </Link>
+            {categories.map((category) => (
+              <Link
+                className="store-category-drawer__link"
+                key={category.id}
+                onClick={() => setCategoriesOpen(false)}
+                to={`/categoria/${category.slug}`}
+              >
+                {category.name}
+              </Link>
+            ))}
+          </div>
         </div>
       </nav>
     </header>
