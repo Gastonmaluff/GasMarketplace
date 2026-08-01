@@ -1,4 +1,4 @@
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router';
 
 import { Icon } from '../../../components/ui/Icon';
 import { appConfig } from '../../../config/app.config';

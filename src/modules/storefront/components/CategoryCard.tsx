@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 import type { Category } from '../../catalog';
 import { ProductImage } from './ProductImage';

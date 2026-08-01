@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router';
 
 import { appConfig } from '../../../config/app.config';
 import { Alert } from '../../../components/ui/Alert';

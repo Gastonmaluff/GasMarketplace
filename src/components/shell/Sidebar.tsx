@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router';
 
 import { appConfig } from '../../config/app.config';
 import { Icon, type IconName } from '../ui/Icon';

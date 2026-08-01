@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router';
 
 import { appConfig } from '../../../config/app.config';
 import { Icon } from '../../../components/ui/Icon';

@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 
 import { LoadingState } from '../../../components/ui/LoadingState';
 import { CartProvider } from '../../cart';

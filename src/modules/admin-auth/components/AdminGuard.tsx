@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router';
 
 import { Alert } from '../../../components/ui/Alert';
 import { Button } from '../../../components/ui/Button';

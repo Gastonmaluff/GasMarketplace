@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet } from 'react-router';
 
 import { Button } from '../../../components/ui/Button';
 import { Icon } from '../../../components/ui/Icon';

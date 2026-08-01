@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 import { appConfig } from '../../../config/app.config';
 import { Icon, type IconName } from '../../../components/ui/Icon';
