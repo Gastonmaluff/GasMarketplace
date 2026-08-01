@@ -89,7 +89,7 @@ Todo terminado.
 ## FASE 7 — Cierre del MVP (pendiente)
 
 - ☐ Datos reales, accesibilidad, rendimiento, despliegue.
-- ☑ Migrar `react-router` a v8 — implementada en rama `feat/react-router-v8`,
-  PR abierto sin fusionar para revisión manual (ver `docs/DEPENDENCY-AUDIT.md`).
+- ☑ Migrar `react-router` a v8 — [PR #23](https://github.com/Gastonmaluff/GasMarketplace/pull/23)
+  fusionado en `main` (ver `docs/DEPENDENCY-AUDIT.md`).
 - ☐ Notificación de pedido nuevo al admin (WhatsApp o email — decisión
   pendiente del usuario).

@@ -4,13 +4,12 @@ Registro de vulnerabilidades conocidas y decisiones tomadas. Última revisión: 
 
 ## Corregidas
 
-| Paquete           | Severidad | Tipo                     | Corrección                                                  |
-| ----------------- | --------- | ------------------------ | ----------------------------------------------------------- |
-| `brace-expansion` | Alta      | Transitiva (tooling dev) | `npm audit fix` sin breaking changes (GHSA-mh99-v99m-4gvg). |
+| Paquete                             | Severidad | Tipo                     | Corrección                                                                                                                                     |
+| ----------------------------------- | --------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `brace-expansion`                   | Alta      | Transitiva (tooling dev) | `npm audit fix` sin breaking changes (GHSA-mh99-v99m-4gvg).                                                                                    |
+| `react-router` / `react-router-dom` | Alta      | Directa (producción)     | Migración a `react-router@8.3.0` (GHSA-qwww-vcr4-c8h2), [PR #23](https://github.com/Gastonmaluff/GasMarketplace/pull/23), fusionado en `main`. |
 
-## Pendiente de revisión manual
-
-### react-router / react-router-dom (GHSA-qwww-vcr4-c8h2, severidad alta)
+### react-router / react-router-dom (GHSA-qwww-vcr4-c8h2, severidad alta) — detalle
 
 - **Afectados**: `react-router` 7.12.0 – 8.2.0, arrastrado por `react-router-dom` (dependencia
   directa de producción, previamente 7.18.1).
@@ -18,19 +17,15 @@ Registro de vulnerabilidades conocidas y decisiones tomadas. Última revisión: 
   actions antes de responder 400.
 - **Exposición real**: nula en este proyecto. GasMarketplace es una SPA cliente con
   `BrowserRouter`; no usa modo RSC, server actions ni framework mode, por lo que el código
-  vulnerable no se ejercita.
-- **Estado**: migración a `react-router@8.3.0` (el fix real) implementada en la rama
-  `feat/react-router-v8` — se eliminó `react-router-dom` y se movieron todos los imports al
-  paquete unificado `react-router`. Sin cambios de comportamiento: `BrowserRouter`, `Link`,
-  `NavLink`, `Route`, `Routes`, `Outlet`, `Navigate`, `useNavigate`, `useParams` y
-  `useSearchParams` siguen exportados desde `react-router` en v8 (solo `RouterProvider`/
-  `HydratedRouter`, que este proyecto no usa, se movieron a `react-router/dom`). Validado con
-  typecheck/lint/format/build/tests (167 tests) y verificación en vivo contra el Emulator Suite
-  (storefront, carrito, checkout, redirect de `AdminGuard`, 404, búsqueda).
-- **Por qué no se fusionó sola**: es un cambio de dependencia mayor (Node 22.22+, React 19.2.7+,
-  Vite 7+ como mínimos de `react-router@8`, ya satisfechos) y, aunque de bajo riesgo funcional
-  aquí, queda fuera de la política de auto-fusión de cambios mayores. El PR queda abierto para
-  revisión y decisión de fusión manual.
+  vulnerable no se ejercitaba.
+- **Corrección**: migración a `react-router@8.3.0` (el fix real) — se eliminó `react-router-dom`
+  y se movieron todos los imports al paquete unificado `react-router`. Sin cambios de
+  comportamiento: `BrowserRouter`, `Link`, `NavLink`, `Route`, `Routes`, `Outlet`, `Navigate`,
+  `useNavigate`, `useParams` y `useSearchParams` siguen exportados desde `react-router` en v8
+  (solo `RouterProvider`/`HydratedRouter`, que este proyecto no usa, se movieron a
+  `react-router/dom`). Validado con typecheck/lint/format/build/tests (167 tests) y verificación
+  en vivo contra el Emulator Suite (storefront, carrito, checkout, redirect de `AdminGuard`, 404,
+  búsqueda).
 
 ## Workspace `functions/` (Cloud Functions)
 
