@@ -16,6 +16,7 @@ export type { Product, ProductImage } from './products/product.types';
 export {
   DEFAULT_PAGE_SIZE,
   getActiveCategoryBySlug,
+  getActiveProductById,
   getActiveProductBySlug,
   listActiveCategories,
   listActiveProducts,

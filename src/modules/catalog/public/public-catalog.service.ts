@@ -1,5 +1,7 @@
 import {
   collection,
+  doc,
+  getDoc,
   getDocs,
   limit as queryLimit,
   orderBy,
@@ -142,6 +144,21 @@ export async function getActiveProductBySlug(slug: string): Promise<Product | nu
   );
   const doc = snapshot.docs[0];
   return doc ? toProduct(doc) : null;
+}
+
+/**
+ * Producto público por ID, para revalidar el carrito antes del checkout.
+ * Devuelve null si no existe, está inactivo (las reglas deniegan la lectura
+ * en ese caso) o la lectura falla por cualquier otro motivo.
+ */
+export async function getActiveProductById(productId: string): Promise<Product | null> {
+  const database = getPublicCatalogDatabase();
+  try {
+    const snapshot = await getDoc(doc(database, 'products', productId));
+    return snapshot.exists() ? toProduct(snapshot) : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
