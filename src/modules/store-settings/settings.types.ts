@@ -23,8 +23,10 @@ export interface DeliveryZone {
   order: number;
   description?: string;
   /**
-   * Ciudades que cubre esta zona. Base para el futuro ruteo por ciudad
-   * (el cliente elige su ciudad y se resuelve zona + costo automáticamente).
+   * Ciudades que cubre esta zona. El checkout las usa para resolver la zona
+   * (y el costo) según la ciudad que elige el cliente — ver
+   * `src/modules/checkout/checkout.delivery.ts`. Una zona sin `cities`
+   * declaradas actúa como cobertura general ("resto del país").
    */
   cities?: string[];
   /** Transportadora que cubre la zona; vacío para delivery propio local. */

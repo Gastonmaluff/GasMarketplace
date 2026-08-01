@@ -1,3 +1,4 @@
+export { listKnownCities, resolveZoneForCity } from './checkout.delivery';
 export { buildRevalidationOutcome, type RevalidationIssue } from './checkout.revalidation';
 export { CheckoutError, submitOrder } from './checkout.service';
 export {

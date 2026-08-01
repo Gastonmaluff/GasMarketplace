@@ -14,6 +14,8 @@ export interface CheckoutFormState {
   customerEmail: string;
   customerAddress: string;
   deliveryMethod: 'pickup' | 'delivery';
+  /** Ciudad elegida en la UI; resuelve `deliveryZoneId` (ver checkout.delivery.ts). */
+  deliveryCity: string;
   deliveryZoneId: string;
   paymentMethod: PaymentMethod | '';
   notes: string;
@@ -62,8 +64,12 @@ export function validateCheckoutForm(
     if (!deliveryEnabled) {
       errors.push('El delivery no está disponible.');
     }
-    if (form.deliveryZoneId === '') {
-      errors.push('Elegí una zona de entrega.');
+    if (form.deliveryCity === '') {
+      errors.push('Elegí tu ciudad para calcular el envío.');
+    } else if (form.deliveryZoneId === '') {
+      errors.push(
+        'No hacemos envíos a esa ciudad todavía. Elegí retiro en local o escribinos por WhatsApp.',
+      );
     }
   }
 

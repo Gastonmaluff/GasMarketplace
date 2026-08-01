@@ -77,7 +77,11 @@ Base ya construida (módulo `src/modules/orders/`):
 - **Zonas de entrega**: base en Ciudad del Este; delivery propio en CDE /
   Hernandarias / Presidente Franco (₲25.000) y transportadora para el resto del
   país (placeholder ₲35.000, ajustable). Cada zona declara `cities[]` y
-  `carrierName?` — base para resolver zona por ciudad en el checkout.
+  `carrierName?`. ✅ **Matching ciudad → zona ya implementado**: el checkout
+  muestra un selector de ciudad (`checkout.delivery.ts`:
+  `listKnownCities`/`resolveZoneForCity`) que resuelve sola la zona; una zona
+  sin `cities[]` actúa como cobertura general ("Otra ciudad"). Si ninguna zona
+  cubre la ciudad elegida, se avisa y se sugiere retiro en local o WhatsApp.
 - **Medios de pago**: `cash` | `bank_transfer` | `pay_on_pickup` |
   `cash_on_delivery` (cobro en destino, el más usado por marketplaces en PY).
 - **Notificación de pedido**: pendiente de decidir (WhatsApp/email al
