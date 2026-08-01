@@ -50,6 +50,11 @@ Todo terminado.
 - ✓ Verificación pública (rutas, responsive, consola, seguridad).
 - ✓ Rediseño visual "Mercado 48" del storefront (paleta teal/crema, home, listados, ficha).
 - ✓ Separar datos públicos y privados del producto (`products` / `productPrivate`).
+- ✓ Header simplificado: se sacaron los chips de categorías sueltos del nav y se
+  reemplazaron por "Todas las categorías" (colapsable), "Ofertas del día",
+  "Preguntas frecuentes" y "Contacto" (WhatsApp). Página nueva
+  `/preguntas-frecuentes` con contenido dinámico desde `settings` (pagos,
+  zonas de envío, retiro, devoluciones).
 - ○ Publicar canal live.
 - ○ Conectar dominio definitivo.
 

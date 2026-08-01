@@ -71,6 +71,7 @@ export function StorefrontFooter({ settings }: StorefrontFooterProps) {
           <Link to="/catalogo">Catálogo</Link>
           <Link to="/catalogo?destacados=1">Ofertas</Link>
           <Link to="/buscar">Buscar</Link>
+          <Link to="/preguntas-frecuentes">Preguntas frecuentes</Link>
         </div>
         <div>
           <h2>Contacto</h2>

@@ -28,11 +28,14 @@ export type IconName =
   | 'filter'
   | 'dollar'
   | 'bell'
-  | 'storefront';
+  | 'storefront'
+  | 'help'
+  | 'message';
 
 interface IconProps {
   name: IconName;
   size?: number;
+  className?: string;
 }
 
 const paths: Record<IconName, React.ReactNode> = {
@@ -82,13 +85,20 @@ const paths: Record<IconName, React.ReactNode> = {
   ),
   bell: <path d="M18 9a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7ZM10 20h4" />,
   storefront: <path d="M4 10.5 12 4l8 6.5M6 9.5V20h12V9.5" />,
+  help: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.1 9a3 3 0 1 1 4.2 2.7c-1 .5-1.3 1-1.3 2.3M12 17h.01" />
+    </>
+  ),
+  message: <path d="M4 4h16v13H8.5L4 21V4Z" />,
 };
 
-export function Icon({ name, size = 20 }: IconProps) {
+export function Icon({ name, size = 20, className }: IconProps) {
   return (
     <svg
       aria-hidden="true"
-      className="icon"
+      className={className ? `icon ${className}` : 'icon'}
       fill="none"
       height={size}
       viewBox="0 0 24 24"
