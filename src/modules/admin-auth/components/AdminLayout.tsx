@@ -13,6 +13,7 @@ const SIDEBAR_PREFERENCE_KEY = 'gasmarket:admin-sidebar:v1';
 const adminNavigation = [
   { icon: 'dashboard', label: 'Inicio', to: '/admin', end: true },
   { icon: 'box', label: 'Productos', to: '/admin/productos' },
+  { icon: 'refresh', label: 'Stock', to: '/admin/stock' },
   { icon: 'tag', label: 'Categorías', to: '/admin/categorias' },
   { icon: 'cart', label: 'Pedidos', to: '/admin/pedidos' },
   { icon: 'user', label: 'Clientes', to: '/admin/clientes' },

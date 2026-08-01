@@ -69,12 +69,15 @@ Todo terminado.
 - ☑ Stock por venta (descuento en `createOrder`, reposición `anulacion` al
   cancelar desde el panel). Ver `docs/FASE-4-PLAN.md`.
 
-## FASE 5 — Panel administrativo restante (en progreso)
+## FASE 5 — Panel administrativo restante (completa)
 
 - ☑ Clientes derivados de pedidos: listado con métricas, detalle con
   historial de pedidos (`/admin/clientes`).
-- ☐ Inventario: vista unificada de movimientos por venta y anulación
-  (hoy el historial de stock vive solo dentro de cada producto).
+- ☑ Inventario: vista unificada de movimientos de stock de todo el
+  catálogo (ajuste/venta/anulación), con filtros y links a producto y
+  pedido (`/admin/stock`). De paso se corrigió un bug real: el listado
+  por producto tenía el `type` de los movimientos hardcodeado a
+  `'ajuste'` en vez de leer el campo real.
 
 ## FASE 6 — Seguridad completa (en progreso)
 

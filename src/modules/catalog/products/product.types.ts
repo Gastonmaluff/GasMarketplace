@@ -85,10 +85,14 @@ export interface StockAdjustmentInput {
   reason: string;
 }
 
+export type StockMovementType = 'ajuste' | 'venta' | 'anulacion';
+
 export interface StockMovement {
   id: string;
   productId: string;
-  type: 'ajuste';
+  type: StockMovementType;
+  /** Solo presente en movimientos `venta`/`anulacion`, vinculados a un pedido. */
+  orderId?: string;
   quantity: number;
   previousStock: number;
   resultingStock: number;

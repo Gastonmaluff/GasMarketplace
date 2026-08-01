@@ -5,12 +5,18 @@ export { AdminSuppliersPage } from './suppliers/pages/AdminSuppliersPage';
 export { AdminSupplierFormPage } from './suppliers/pages/AdminSupplierFormPage';
 export { AdminProductsPage } from './products/pages/AdminProductsPage';
 export { AdminProductFormPage } from './products/pages/AdminProductFormPage';
+export { AdminStockPage } from './products/pages/AdminStockPage';
 export { listCategories } from './categories/category.service';
 export { listSuppliers } from './suppliers/supplier.service';
-export { listProducts } from './products/product.service';
+export { listAllStockMovements, listProducts } from './products/product.service';
 export type { Category } from './categories/category.types';
 export type { Supplier } from './suppliers/supplier.types';
-export type { Product, ProductImage } from './products/product.types';
+export type {
+  Product,
+  ProductImage,
+  StockMovement,
+  StockMovementType,
+} from './products/product.types';
 
 // API pública del storefront (consultas con active == true).
 export {
