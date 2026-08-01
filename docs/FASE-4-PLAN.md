@@ -10,37 +10,60 @@ Base ya construida (módulo `src/modules/orders/`):
 - Lógica pura testeable (`order.core.ts`): cálculo de totales del lado servidor,
   máquina de estados (`canTransition`/`nextStatuses`), correlativo `YYYY-000001`.
 - Tests unitarios (`order.core.test.ts`).
+- Zonas de entrega con ciudades/transportadora y medio de pago "cobro en
+  destino" (`cash_on_delivery`) — ver `settings.types.ts` y el seed de staging.
 
 ## Pasos siguientes (cada uno, su propio PR verificado)
 
-1. **`createOrder` (Cloud Function callable, en `functions/`).** El cliente solo
-   envía `items[{productId, quantity}]`, datos del cliente, `deliveryMethod`,
-   `deliveryZoneId?`, `paymentMethod`, `notes?`. La Function, en una transacción:
-   revalida producto activo + precio vigente + stock; recalcula totales con
-   `computeOrderTotals` (nunca confía en montos del cliente); resuelve el costo de
-   envío desde `settings/public.deliveryZones`; incrementa `counters/orders-YYYY`;
-   crea el pedido `pendiente`, su primer `event` y descuenta stock con movimiento
-   `venta`. Devuelve número + resumen. Tests con el emulador.
+1. ✅ **`createOrder` (Cloud Function callable, en `functions/`).** Implementada en
+   `functions/src/create-order.ts` (+ `order-core.ts`, espejo sin dependencias de
+   Firebase de la lógica pura del frontend, porque `functions/` se empaqueta y
+   despliega por separado). El cliente solo envía
+   `items[{productId, quantity}]`, datos del comprador, `deliveryMethod`,
+   `deliveryZoneId?`, `paymentMethod`, `notes?`. La Function, en una única
+   transacción: revalida producto activo + precio vigente + stock (respeta
+   `allowBackorder` y `settings/private.allowNegativeStock`); recalcula totales
+   con `computeOrderTotals` (nunca confía en montos del cliente); resuelve el
+   costo de envío desde `settings/public.deliveryZones` (rechaza zona inactiva o
+   inexistente) y valida el medio de pago contra `acceptedPaymentMethods`;
+   incrementa `counters/orders-YYYY`; crea/actualiza el cliente por
+   `phoneNormalized`; crea el pedido `pendiente`, su primer `event` ("creado") y
+   descuenta stock con movimiento `venta`. Devuelve número + resumen calculado
+   por el servidor. 17 tests contra el emulador
+   (`npx firebase-tools emulators:exec --only firestore "npm --prefix functions run test"`).
 
-2. **Security Rules de `orders` / `orders/*/events` / `counters` / `customers`.**
-   Create solo la Function; update solo admin con transición válida (reusar la
-   máquina de estados); delete: nadie. Sumar tests de reglas.
+2. ✅ **Security Rules de `orders` / `orders/*/events` / `counters` / `customers`.**
+   `orders`: create siempre `false` (única vía es la Function, que usa Admin SDK
+   y bypassa las reglas); update solo admin con transición de estado válida
+   (`canTransitionOrderStatus`, espejo de la máquina de estados) e inmutabilidad
+   del resto de campos vía `.diff().affectedKeys()`; delete: nadie. `events`:
+   create solo admin (schema `creado`/`cambio_estado`/`nota`), inmutable.
+   `customers`: solo admin, schema validado. `counters`: `write: if false`
+   siempre (solo la Function, transaccional). `stockMovements` ahora acepta
+   `type` `venta`/`anulacion` con `orderId` opcional además de `ajuste`. 33 tests
+   de reglas (antes 21).
 
 3. **Checkout público (`src/modules/checkout/`, ruta `/checkout`).** Formulario de
    invitado (nombre, teléfono PY, email opcional), elección de entrega (pickup /
-   zona) y medio de pago (desde `settings`), revalidación y llamada a
-   `createOrder`. Vaciar carrito solo ante éxito. Confirmación en
-   `/pedido/:number/gracias` con el resumen del servidor.
+   zona, con las ciudades de cada zona como referencia) y medio de pago (desde
+   `settings`, incluye "cobro en destino"), revalidación y llamada a
+   `createOrder` (vía Functions client SDK `httpsCallable`). Vaciar carrito solo
+   ante éxito. Confirmación en `/pedido/:number/gracias` con el resumen que
+   devuelve la Function (nunca lee `orders` desde Firestore).
 
 4. **Panel admin de pedidos (`/admin/pedidos`, `/admin/pedidos/:id`).** Listado con
    filtro por estado; detalle con cambio de estado (validado por la máquina de
-   estados) e historial de eventos. Cancelar repone stock (`anulacion`).
+   estados, mismo `canTransition` del módulo `orders`) e historial de eventos
+   (agrega un evento `cambio_estado` en la misma transacción cliente que
+   actualiza `status`). Cancelar repone stock (`anulacion`).
 
-## Decisiones que conviene confirmar con el usuario
+## Decisiones ya confirmadas con el usuario
 
-- **Zonas de entrega**: hoy `settings/public.deliveryZones` existe en el modelo
-  pero está vacío. Para probar `delivery` habrá que cargar zonas (nombre + costo).
-- **Medios de pago**: se usan los de `settings.acceptedPaymentMethods`
-  (`cash` | `bank_transfer` | `pay_on_pickup`).
-- **Notificación de pedido**: además del panel, ¿aviso por WhatsApp/email al
-  confirmar? (`settings/private.internalOrderNotificationEmails` ya existe.)
+- **Zonas de entrega**: base en Ciudad del Este; delivery propio en CDE /
+  Hernandarias / Presidente Franco (₲25.000) y transportadora para el resto del
+  país (placeholder ₲35.000, ajustable). Cada zona declara `cities[]` y
+  `carrierName?` — base para resolver zona por ciudad en el checkout.
+- **Medios de pago**: `cash` | `bank_transfer` | `pay_on_pickup` |
+  `cash_on_delivery` (cobro en destino, el más usado por marketplaces en PY).
+- **Notificación de pedido**: pendiente de decidir (WhatsApp/email al
+  confirmar); `settings/private.internalOrderNotificationEmails` ya existe.

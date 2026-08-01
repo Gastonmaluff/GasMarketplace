@@ -14,8 +14,13 @@ rules_version = '2';
 // productSlugs/{slug}       — índice de unicidad { productId }.
 // productSkus/{sku}         — índice de unicidad { productId }.
 // productBarcodes/{code}    — índice de unicidad { productId }.
-// stockMovements/{id}       — ajustes de stock, inmutables una vez creados.
-// orders, customers, counters — NO habilitados todavía (default deny).
+// stockMovements/{id}       — ajustes/ventas/anulaciones de stock, inmutables.
+// orders/{id}               — creados exclusivamente por la Cloud Function
+//                              createOrder (Admin SDK, bypassa estas reglas);
+//                              solo admin lee y transiciona el estado.
+// orders/{id}/events/{id}   — historial del pedido; inmutable una vez creado.
+// customers/{id}            — clientes derivados de pedidos; solo admin.
+// counters/{id}             — correlativo anual de pedidos; solo la Function.
 //
 // Principios: default deny; administración exclusivamente por custom claim
 // admin == true (asignado con Admin SDK, nunca escribible por clientes);
@@ -25,6 +30,9 @@ rules_version = '2';
 // Límite conocido: las reglas no pueden iterar arrays, por lo que el
 // contenido interno de deliveryZones e images se valida en el cliente y
 // solo su tamaño acá; ambas colecciones son de escritura exclusiva admin.
+// El array `items` de orders no se valida acá por el mismo motivo: no hace
+// falta, porque la única vía de creación (createOrder) ya lo calcula del
+// lado del servidor y las reglas ni siquiera permiten un create directo.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -287,11 +295,12 @@ service cloud.firestore {
 
     function isValidStockMovement() {
       return incoming().keys().hasOnly([
-          'productId', 'type', 'quantity', 'previousStock', 'resultingStock',
+          'productId', 'type', 'orderId', 'quantity', 'previousStock', 'resultingStock',
           'reason', 'createdAt', 'createdBy'
         ]) &&
         requiredString(incoming().productId, 100) &&
-        incoming().type == 'ajuste' &&
+        incoming().type in ['ajuste', 'venta', 'anulacion'] &&
+        (!('orderId' in incoming()) || requiredString(incoming().orderId, 100)) &&
         incoming().quantity is int &&
         incoming().quantity != 0 &&
         intBetween(incoming().previousStock, -1000000, 1000000) &&
@@ -308,8 +317,81 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ------------------------- orders -------------------------
+    // Los pedidos contienen PII y montos: solo los crea la Cloud Function
+    // createOrder (Admin SDK, que bypassa estas reglas por diseño). El panel
+    // admin únicamente lee y transiciona el estado; items, totales y datos
+    // del cliente quedan inmutables tras la creación.
+
+    function canTransitionOrderStatus(from, to) {
+      return (from == 'pendiente' && to in ['confirmado', 'cancelado']) ||
+        (from == 'confirmado' && to in ['en_preparacion', 'cancelado']) ||
+        (from == 'en_preparacion' && to in ['enviado', 'cancelado']) ||
+        (from == 'enviado' && to == 'entregado');
+    }
+
+    function isValidOrderStatusTransition() {
+      return incoming().diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'updatedBy']) &&
+        canTransitionOrderStatus(resource.data.status, incoming().status) &&
+        auditedNow();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAdmin();
+      // Única vía de creación: la Cloud Function createOrder.
+      allow create: if false;
+      allow update: if isAdmin() && isValidOrderStatusTransition();
+      allow delete: if false;
+
+      function isValidOrderEvent() {
+        return incoming().keys().hasOnly(
+            ['type', 'fromStatus', 'toStatus', 'note', 'createdAt', 'createdBy']) &&
+          incoming().type in ['creado', 'cambio_estado', 'nota'] &&
+          (!('fromStatus' in incoming()) || boundedString(incoming().fromStatus, 20)) &&
+          (!('toStatus' in incoming()) || boundedString(incoming().toStatus, 20)) &&
+          (!('note' in incoming()) || boundedString(incoming().note, 500)) &&
+          createdNow();
+      }
+
+      match /events/{eventId} {
+        allow read: if isAdmin();
+        allow create: if isAdmin() && isValidOrderEvent();
+        // Historial inmutable: la Function crea "creado", el admin agrega
+        // "cambio_estado"/"nota" al cambiar el estado; nunca se editan ni borran.
+        allow update, delete: if false;
+      }
+    }
+
+    // ----------------------- customers ------------------------
+
+    function isValidCustomer() {
+      return incoming().keys().hasOnly(
+          ['phoneNormalized', 'phoneDisplay', 'name', 'email', 'ordersCount', 'totalSpent', 'lastOrderAt']) &&
+        requiredString(incoming().phoneNormalized, 20) &&
+        requiredString(incoming().phoneDisplay, 30) &&
+        requiredString(incoming().name, 120) &&
+        (!('email' in incoming()) || boundedString(incoming().email, 160)) &&
+        intBetween(incoming().ordersCount, 0, 100000) &&
+        intBetween(incoming().totalSpent, 0, 1000000000000) &&
+        incoming().lastOrderAt is timestamp;
+    }
+
+    match /customers/{customerId} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidCustomer();
+      allow delete: if false;
+    }
+
+    // ------------------------ counters --------------------------
+    // Correlativo anual de pedidos; solo lo incrementa la Cloud Function
+    // createOrder dentro de la misma transacción que crea el pedido.
+
+    match /counters/{counterId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // ----------------------- default deny --------------------
-    // orders, customers y counters permanecen cerrados hasta sus fases.
 
     match /{document=**} {
       allow read, write: if false;

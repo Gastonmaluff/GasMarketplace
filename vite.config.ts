@@ -6,9 +6,10 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
-    // Las pruebas de Security Rules corren aparte contra el emulador
-    // (npm run test:rules); no forman parte del suite estándar ni de CI.
-    exclude: [...configDefaults.exclude, 'tests/rules/**'],
+    // Las pruebas de Security Rules y de Cloud Functions corren aparte
+    // contra el emulador (npm run test:rules; npm --prefix functions run
+    // test); no forman parte del suite estándar ni de CI.
+    exclude: [...configDefaults.exclude, 'tests/rules/**', 'functions/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],

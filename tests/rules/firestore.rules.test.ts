@@ -385,6 +385,187 @@ describe('stockMovements', () => {
     await assertFails(updateDoc(doc(adminDb(), 'stockMovements/frozen'), { reason: 'editado' }));
     await assertFails(deleteDoc(doc(adminDb(), 'stockMovements/frozen')));
   });
+
+  it('acepta venta y anulación con orderId; rechaza un type desconocido', async () => {
+    await assertSucceeds(
+      setDoc(doc(adminDb(), 'stockMovements/venta1'), {
+        ...validMovement,
+        type: 'venta',
+        orderId: 'o1',
+        quantity: -2,
+        previousStock: 10,
+        resultingStock: 8,
+      }),
+    );
+    await assertSucceeds(
+      setDoc(doc(adminDb(), 'stockMovements/anulacion1'), {
+        ...validMovement,
+        type: 'anulacion',
+        orderId: 'o1',
+        quantity: 2,
+        previousStock: 8,
+        resultingStock: 10,
+      }),
+    );
+    await assertFails(
+      setDoc(doc(adminDb(), 'stockMovements/bad-type'), { ...validMovement, type: 'otro' }),
+    );
+  });
+});
+
+describe('orders', () => {
+  const validOrder = {
+    number: '2026-000001',
+    status: 'pendiente',
+    customer: {
+      name: 'Ana Gómez',
+      phoneDisplay: '0981 123 456',
+      phoneNormalized: '+595981123456',
+    },
+    customerId: 'c1',
+    items: [{ productId: 'p1', name: 'Yerba', unitPrice: 25000, quantity: 2, subtotal: 50000 }],
+    deliveryMethod: 'pickup',
+    deliveryCost: 0,
+    total: 50000,
+    paymentMethod: 'cash',
+    createdAt: serverTimestamp(),
+    createdBy: 'system:createOrder',
+    updatedAt: serverTimestamp(),
+    updatedBy: 'system:createOrder',
+  };
+
+  it('nadie crea pedidos directamente: la única vía es la Cloud Function', async () => {
+    await assertFails(setDoc(doc(adminDb(), 'orders/o1'), validOrder));
+    await assertFails(setDoc(doc(plainDb(), 'orders/o1'), validOrder));
+    await assertFails(setDoc(doc(visitorDb(), 'orders/o1'), validOrder));
+  });
+
+  it('solo el admin lee pedidos', async () => {
+    await seed('orders/o1', validOrder);
+    await assertFails(getDoc(doc(visitorDb(), 'orders/o1')));
+    await assertFails(getDoc(doc(plainDb(), 'orders/o1')));
+    await assertSucceeds(getDoc(doc(adminDb(), 'orders/o1')));
+  });
+
+  it('el admin transiciona el estado válidamente', async () => {
+    await seed('orders/o2', {
+      ...validOrder,
+      createdAt: seededTimestamp,
+      updatedAt: seededTimestamp,
+    });
+    await assertSucceeds(
+      updateDoc(doc(adminDb(), 'orders/o2'), {
+        status: 'confirmado',
+        updatedAt: serverTimestamp(),
+        updatedBy: ADMIN_UID,
+      }),
+    );
+  });
+
+  it('rechaza un salto de estado inválido', async () => {
+    await seed('orders/o3', {
+      ...validOrder,
+      createdAt: seededTimestamp,
+      updatedAt: seededTimestamp,
+    });
+    await assertFails(
+      updateDoc(doc(adminDb(), 'orders/o3'), {
+        status: 'entregado',
+        updatedAt: serverTimestamp(),
+        updatedBy: ADMIN_UID,
+      }),
+    );
+  });
+
+  it('rechaza modificar items o totales al cambiar el estado', async () => {
+    await seed('orders/o4', {
+      ...validOrder,
+      createdAt: seededTimestamp,
+      updatedAt: seededTimestamp,
+    });
+    await assertFails(
+      updateDoc(doc(adminDb(), 'orders/o4'), {
+        status: 'confirmado',
+        total: 999999,
+        updatedAt: serverTimestamp(),
+        updatedBy: ADMIN_UID,
+      }),
+    );
+  });
+
+  it('nadie borra pedidos', async () => {
+    await seed('orders/o5', validOrder);
+    await assertFails(deleteDoc(doc(adminDb(), 'orders/o5')));
+  });
+
+  it('eventos: el admin agrega historial válido; nadie los edita ni borra', async () => {
+    await seed('orders/o6', validOrder);
+    await assertSucceeds(
+      setDoc(doc(adminDb(), 'orders/o6/events/e1'), {
+        type: 'cambio_estado',
+        fromStatus: 'pendiente',
+        toStatus: 'confirmado',
+        createdAt: serverTimestamp(),
+        createdBy: ADMIN_UID,
+      }),
+    );
+    await assertFails(getDoc(doc(visitorDb(), 'orders/o6/events/e1')));
+    await assertFails(
+      setDoc(doc(plainDb(), 'orders/o6/events/e2'), {
+        type: 'nota',
+        createdAt: serverTimestamp(),
+        createdBy: PLAIN_UID,
+      }),
+    );
+    await seed('orders/o6/events/frozen', {
+      type: 'creado',
+      toStatus: 'pendiente',
+      createdAt: seededTimestamp,
+      createdBy: 'system:createOrder',
+    });
+    await assertFails(updateDoc(doc(adminDb(), 'orders/o6/events/frozen'), { note: 'x' }));
+    await assertFails(deleteDoc(doc(adminDb(), 'orders/o6/events/frozen')));
+  });
+});
+
+describe('customers', () => {
+  const validCustomer = {
+    phoneNormalized: '+595981123456',
+    phoneDisplay: '0981 123 456',
+    name: 'Ana Gómez',
+    ordersCount: 1,
+    totalSpent: 50000,
+    lastOrderAt: serverTimestamp(),
+  };
+
+  it('solo el admin lee y escribe clientes con esquema válido', async () => {
+    await assertFails(setDoc(doc(plainDb(), 'customers/c1'), validCustomer));
+    await assertSucceeds(setDoc(doc(adminDb(), 'customers/c1'), validCustomer));
+    await assertFails(getDoc(doc(visitorDb(), 'customers/c1')));
+    await assertSucceeds(getDoc(doc(adminDb(), 'customers/c1')));
+  });
+
+  it('rechaza esquema inválido', async () => {
+    await assertFails(
+      setDoc(doc(adminDb(), 'customers/c2'), { ...validCustomer, campoExtra: true }),
+    );
+    await assertFails(
+      setDoc(doc(adminDb(), 'customers/c3'), { ...validCustomer, ordersCount: -1 }),
+    );
+  });
+});
+
+describe('counters', () => {
+  it('nadie escribe contadores directamente: solo la Function transaccional', async () => {
+    await assertFails(setDoc(doc(adminDb(), 'counters/orders-2026'), { sequence: 1 }));
+    await assertFails(setDoc(doc(plainDb(), 'counters/orders-2026'), { sequence: 1 }));
+  });
+
+  it('solo el admin lee contadores', async () => {
+    await seed('counters/orders-2026', { sequence: 3 });
+    await assertFails(getDoc(doc(visitorDb(), 'counters/orders-2026')));
+    await assertSucceeds(getDoc(doc(adminDb(), 'counters/orders-2026')));
+  });
 });
 
 describe('consultas del storefront', () => {
@@ -464,11 +645,8 @@ describe('consultas del storefront', () => {
 });
 
 describe('colecciones cerradas', () => {
-  it('orders, customers y counters siguen bloqueados incluso para admin', async () => {
-    await seed('orders/o1', { status: 'pendiente' });
-    await assertFails(getDoc(doc(visitorDb(), 'orders/o1')));
-    await assertFails(getDoc(doc(adminDb(), 'orders/o1')));
-    await assertFails(setDoc(doc(adminDb(), 'customers/c1'), { name: 'x' }));
-    await assertFails(setDoc(doc(adminDb(), 'counters/orders-2026'), { value: 1 }));
+  it('cualquier colección no modelada permanece cerrada por defecto', async () => {
+    await assertFails(setDoc(doc(adminDb(), 'algo-no-modelado/x'), { valor: 1 }));
+    await assertFails(getDoc(doc(adminDb(), 'algo-no-modelado/x')));
   });
 });
