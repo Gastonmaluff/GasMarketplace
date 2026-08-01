@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
 
 import { Button } from '../../../components/ui/Button';
+import { Icon } from '../../../components/ui/Icon';
 import { Sidebar, type SidebarNavigationItem } from '../../../components/shell/Sidebar';
 import { Topbar } from '../../../components/shell/Topbar';
 import { useAdminSession } from '../hooks/useAdminSession';
@@ -80,13 +81,23 @@ export function AdminLayout() {
       <div className="internal-main">
         <Topbar
           actions={
-            <Button
-              onClick={() => void getAdminAuthService()?.signOut()}
-              size="small"
-              variant="ghost"
-            >
-              Cerrar sesión
-            </Button>
+            <>
+              <Link
+                aria-label="Ver sitio público"
+                className="header-icon-link"
+                title="Ver sitio público"
+                to="/"
+              >
+                <Icon name="storefront" size={20} />
+              </Link>
+              <Button
+                onClick={() => void getAdminAuthService()?.signOut()}
+                size="small"
+                variant="ghost"
+              >
+                Cerrar sesión
+              </Button>
+            </>
           }
           context="GasMarketplace"
           onOpenMenu={() => setMobileOpen(true)}
