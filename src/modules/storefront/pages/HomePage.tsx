@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 import { appConfig } from '../../../config/app.config';
 import { listActiveProducts, type Product } from '../../catalog';

@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 
 import { appConfig } from '../../../config/app.config';
 import { Alert } from '../../../components/ui/Alert';

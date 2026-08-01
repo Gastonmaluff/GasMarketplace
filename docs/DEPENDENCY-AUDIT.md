@@ -8,24 +8,29 @@ Registro de vulnerabilidades conocidas y decisiones tomadas. Última revisión: 
 | ----------------- | --------- | ------------------------ | ----------------------------------------------------------- |
 | `brace-expansion` | Alta      | Transitiva (tooling dev) | `npm audit fix` sin breaking changes (GHSA-mh99-v99m-4gvg). |
 
-## Aceptadas temporalmente
+## Pendiente de revisión manual
 
 ### react-router / react-router-dom (GHSA-qwww-vcr4-c8h2, severidad alta)
 
 - **Afectados**: `react-router` 7.12.0 – 8.2.0, arrastrado por `react-router-dom` (dependencia
-  directa de producción, actualmente 7.18.1, la última publicada de la línea 7).
+  directa de producción, previamente 7.18.1).
 - **Vulnerabilidad**: bypass de CSRF en **modo RSC (React Server Components)** que permite ejecutar
   actions antes de responder 400.
 - **Exposición real**: nula en este proyecto. GasMarketplace es una SPA cliente con
   `BrowserRouter`; no usa modo RSC, server actions ni framework mode, por lo que el código
   vulnerable no se ejercita.
-- **Por qué no se corrigió**: no existe fix compatible. `npm audit fix --force` propone un
-  **downgrade** breaking a `react-router-dom@7.11.0`; el fix real vive en `react-router@8.3.0`,
-  que requiere migración mayor a la línea v8 (cambio de paquete e imports). Ambas opciones violan
-  la política de no aplicar cambios mayores riesgosos de forma automática.
-- **Plan**: migrar a `react-router` v8 como tarea propia, con pruebas, cuando la línea esté madura
-  o antes de exponer la aplicación a tráfico real. Reevaluar en cada auditoría si aparece un parche
-  en la línea 7.
+- **Estado**: migración a `react-router@8.3.0` (el fix real) implementada en la rama
+  `feat/react-router-v8` — se eliminó `react-router-dom` y se movieron todos los imports al
+  paquete unificado `react-router`. Sin cambios de comportamiento: `BrowserRouter`, `Link`,
+  `NavLink`, `Route`, `Routes`, `Outlet`, `Navigate`, `useNavigate`, `useParams` y
+  `useSearchParams` siguen exportados desde `react-router` en v8 (solo `RouterProvider`/
+  `HydratedRouter`, que este proyecto no usa, se movieron a `react-router/dom`). Validado con
+  typecheck/lint/format/build/tests (167 tests) y verificación en vivo contra el Emulator Suite
+  (storefront, carrito, checkout, redirect de `AdminGuard`, 404, búsqueda).
+- **Por qué no se fusionó sola**: es un cambio de dependencia mayor (Node 22.22+, React 19.2.7+,
+  Vite 7+ como mínimos de `react-router@8`, ya satisfechos) y, aunque de bajo riesgo funcional
+  aquí, queda fuera de la política de auto-fusión de cambios mayores. El PR queda abierto para
+  revisión y decisión de fusión manual.
 
 ## Workspace `functions/` (Cloud Functions)
 

@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 
 import { appConfig } from '../../../../config/app.config';
 import { Alert } from '../../../../components/ui/Alert';
