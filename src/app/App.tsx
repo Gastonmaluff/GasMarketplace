@@ -29,6 +29,12 @@ const ProductDetailPage = lazy(() =>
 const CartPage = lazy(() =>
   import('../modules/storefront').then((module) => ({ default: module.CartPage })),
 );
+const CheckoutPage = lazy(() =>
+  import('../modules/storefront').then((module) => ({ default: module.CheckoutPage })),
+);
+const OrderConfirmationPage = lazy(() =>
+  import('../modules/storefront').then((module) => ({ default: module.OrderConfirmationPage })),
+);
 const StoreNotFoundPage = lazy(() =>
   import('../modules/storefront').then((module) => ({ default: module.StoreNotFoundPage })),
 );
@@ -79,6 +85,8 @@ export function AppRoutes() {
           <Route path="buscar" element={<SearchPage />} />
           <Route path="producto/:slug" element={<ProductDetailPage />} />
           <Route path="carrito" element={<CartPage />} />
+          <Route path="checkout" element={<CheckoutPage />} />
+          <Route path="pedido/:number/gracias" element={<OrderConfirmationPage />} />
           <Route path="*" element={<StoreNotFoundPage />} />
         </Route>
         <Route element={<DemoLayout />}>

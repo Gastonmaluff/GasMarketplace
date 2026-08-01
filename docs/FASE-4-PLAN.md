@@ -43,13 +43,19 @@ Base ya construida (módulo `src/modules/orders/`):
    `type` `venta`/`anulacion` con `orderId` opcional además de `ajuste`. 33 tests
    de reglas (antes 21).
 
-3. **Checkout público (`src/modules/checkout/`, ruta `/checkout`).** Formulario de
-   invitado (nombre, teléfono PY, email opcional), elección de entrega (pickup /
-   zona, con las ciudades de cada zona como referencia) y medio de pago (desde
-   `settings`, incluye "cobro en destino"), revalidación y llamada a
-   `createOrder` (vía Functions client SDK `httpsCallable`). Vaciar carrito solo
-   ante éxito. Confirmación en `/pedido/:number/gracias` con el resumen que
-   devuelve la Function (nunca lee `orders` desde Firestore).
+3. ✅ **Checkout público (`src/modules/checkout/`, ruta `/checkout`).** Formulario
+   de invitado (nombre, WhatsApp con `ParaguayPhoneInput`, email opcional),
+   elección de entrega (pickup / zona) y medio de pago (desde `settings`,
+   incluye "cobro en destino"), revalidación contra Firestore al entrar
+   (`getActiveProductById` + `buildRevalidationOutcome`: quita productos
+   inactivos/agotados, ajusta cantidades por stock, avisa cambios de precio) y
+   llamada a `createOrder` vía `httpsCallable`. Carrito se vacía solo ante
+   éxito. Confirmación en `/pedido/:number/gracias` con el resumen que devuelve
+   la Function (nunca lee `orders` desde Firestore; usa `location.state`).
+   Verificado end-to-end contra el Emulator Suite completo (pickup+cash y
+   delivery+cobro-en-destino): correlativo, costo de envío, descuento de
+   stock, alta de cliente y evento, todo correcto. 15 tests unitarios de la
+   lógica pura (`checkout.validation`/`checkout.revalidation`).
 
 4. **Panel admin de pedidos (`/admin/pedidos`, `/admin/pedidos/:id`).** Listado con
    filtro por estado; detalle con cambio de estado (validado por la máquina de

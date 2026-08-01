@@ -126,25 +126,20 @@ export function CartPage() {
             <span>Subtotal</span>
             <strong>{formatPrice(totals.subtotal)}</strong>
           </div>
-          <p className="cart-summary__note">El costo de envío se coordina según tu zona.</p>
+          <p className="cart-summary__note">El costo de envío se calcula en el checkout.</p>
+          <Link className="button button--primary cart-summary__cta" to="/checkout">
+            Finalizar compra
+          </Link>
           {whatsappOrderLink ? (
             <a
-              className="button button--primary cart-summary__cta"
+              className="button button--ghost"
               href={whatsappOrderLink}
               rel="noopener noreferrer"
               target="_blank"
             >
-              Finalizar pedido por WhatsApp
+              O pedir por WhatsApp
             </a>
           ) : null}
-          <button
-            className="button button--ghost"
-            disabled
-            title="Disponible próximamente"
-            type="button"
-          >
-            Checkout online (próximamente)
-          </button>
           <div className="cart-summary__actions">
             <Link to="/catalogo">Seguir comprando</Link>
             <button className="cart-summary__clear" onClick={clear} type="button">

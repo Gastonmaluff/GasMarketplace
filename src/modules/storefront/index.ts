@@ -5,4 +5,6 @@ export { CategoryPage } from './pages/CategoryPage';
 export { SearchPage } from './pages/SearchPage';
 export { ProductDetailPage } from './pages/ProductDetailPage';
 export { CartPage } from './pages/CartPage';
+export { CheckoutPage } from './pages/CheckoutPage';
+export { OrderConfirmationPage } from './pages/OrderConfirmationPage';
 export { StoreNotFoundPage } from './pages/StoreNotFoundPage';
