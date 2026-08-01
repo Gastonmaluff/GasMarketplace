@@ -11,6 +11,7 @@ import {
   where,
   type DocumentReference,
   type DocumentSnapshot,
+  type QueryDocumentSnapshot,
   type Timestamp,
   type Transaction,
 } from 'firebase/firestore';
@@ -35,6 +36,7 @@ import type {
   ProductPrivate,
   StockAdjustmentInput,
   StockMovement,
+  StockMovementType,
 } from './product.types';
 
 const MAX_PRODUCTS = 300;
@@ -505,6 +507,25 @@ export async function adjustStock({
   }
 }
 
+function toStockMovement(movement: QueryDocumentSnapshot): StockMovement {
+  const data = movement.data();
+  const createdAt = data.createdAt as Timestamp | undefined;
+  return {
+    id: movement.id,
+    productId: typeof data.productId === 'string' ? data.productId : '',
+    type: (typeof data.type === 'string' ? data.type : 'ajuste') as StockMovementType,
+    ...(typeof data.orderId === 'string' && data.orderId ? { orderId: data.orderId } : {}),
+    quantity: typeof data.quantity === 'number' ? data.quantity : 0,
+    previousStock: typeof data.previousStock === 'number' ? data.previousStock : 0,
+    resultingStock: typeof data.resultingStock === 'number' ? data.resultingStock : 0,
+    reason: typeof data.reason === 'string' ? data.reason : '',
+    createdBy: typeof data.createdBy === 'string' ? data.createdBy : '',
+    ...(createdAt && typeof createdAt.toMillis === 'function'
+      ? { createdAtMillis: createdAt.toMillis() }
+      : {}),
+  };
+}
+
 export async function listStockMovements(productId: string): Promise<StockMovement[]> {
   const { database } = getCatalogContext();
   const snapshot = await getDocs(
@@ -515,21 +536,20 @@ export async function listStockMovements(productId: string): Promise<StockMoveme
       queryLimit(MAX_MOVEMENTS),
     ),
   );
-  return snapshot.docs.map((movement) => {
-    const data = movement.data();
-    const createdAt = data.createdAt as Timestamp | undefined;
-    return {
-      id: movement.id,
-      productId: typeof data.productId === 'string' ? data.productId : '',
-      type: 'ajuste',
-      quantity: typeof data.quantity === 'number' ? data.quantity : 0,
-      previousStock: typeof data.previousStock === 'number' ? data.previousStock : 0,
-      resultingStock: typeof data.resultingStock === 'number' ? data.resultingStock : 0,
-      reason: typeof data.reason === 'string' ? data.reason : '',
-      createdBy: typeof data.createdBy === 'string' ? data.createdBy : '',
-      ...(createdAt && typeof createdAt.toMillis === 'function'
-        ? { createdAtMillis: createdAt.toMillis() }
-        : {}),
-    };
-  });
+  return snapshot.docs.map(toStockMovement);
+}
+
+const MAX_ALL_MOVEMENTS = 300;
+
+/** Historial de movimientos de todo el catálogo, para el panel de inventario. */
+export async function listAllStockMovements(): Promise<StockMovement[]> {
+  const { database } = getCatalogContext();
+  const snapshot = await getDocs(
+    query(
+      collection(database, 'stockMovements'),
+      orderBy('createdAt', 'desc'),
+      queryLimit(MAX_ALL_MOVEMENTS),
+    ),
+  );
+  return snapshot.docs.map(toStockMovement);
 }

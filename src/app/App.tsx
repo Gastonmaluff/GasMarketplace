@@ -73,6 +73,9 @@ const AdminProductsPage = lazy(() =>
 const AdminProductFormPage = lazy(() =>
   import('../modules/catalog').then((module) => ({ default: module.AdminProductFormPage })),
 );
+const AdminStockPage = lazy(() =>
+  import('../modules/catalog').then((module) => ({ default: module.AdminStockPage })),
+);
 const AdminOrdersPage = lazy(() =>
   import('../modules/orders').then((module) => ({ default: module.AdminOrdersPage })),
 );
@@ -119,6 +122,7 @@ export function AppRoutes() {
             <Route path="admin/productos" element={<AdminProductsPage />} />
             <Route path="admin/productos/nuevo" element={<AdminProductFormPage />} />
             <Route path="admin/productos/:id" element={<AdminProductFormPage />} />
+            <Route path="admin/stock" element={<AdminStockPage />} />
             <Route path="admin/pedidos" element={<AdminOrdersPage />} />
             <Route path="admin/pedidos/:id" element={<AdminOrderDetailPage />} />
             <Route path="admin/clientes" element={<AdminCustomersPage />} />
