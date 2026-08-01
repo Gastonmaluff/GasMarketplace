@@ -53,29 +53,40 @@ Todo terminado.
 - ○ Publicar canal live.
 - ○ Conectar dominio definitivo.
 
-## FASE 4 — Venta (en progreso)
+## FASE 4 — Venta (completa)
 
 - ☑ Carrito (`cart`) client-side con persistencia local (`localStorage`),
   contador real en el header, stepper de cantidades y pedido por WhatsApp.
-  Revalidación de stock contra Firestore pendiente para el checkout.
 - ☑ Base del módulo `orders`: modelo de dominio, lógica pura (totales,
-  máquina de estados, correlativo) y tests. Plan del resto en
-  `docs/FASE-4-PLAN.md`.
-- ☐ Checkout de invitado (zonas de entrega, confirmación).
-- ☐ Cloud Function `createOrder` transaccional con pruebas contra el emulador.
-- ☐ Pedidos (panel: listado, detalle, historial de eventos).
-- ☐ Stock por venta (descuento en `createOrder`, reposición por cancelación).
+  máquina de estados, correlativo) y tests.
+- ☑ Checkout de invitado: datos, zonas de entrega, medios de pago (incluye
+  "cobro en destino"), revalidación de carrito contra Firestore y
+  confirmación (`/checkout`, `/pedido/:number/gracias`).
+- ☑ Cloud Function `createOrder` transaccional, con pruebas contra el
+  emulador (`functions/src/create-order.ts`).
+- ☑ Pedidos (panel: listado con filtros/métricas, detalle, cambio de
+  estado, historial de eventos — `/admin/pedidos`).
+- ☑ Stock por venta (descuento en `createOrder`, reposición `anulacion` al
+  cancelar desde el panel). Ver `docs/FASE-4-PLAN.md`.
 
-## FASE 5 — Panel administrativo restante (pendiente)
+## FASE 5 — Panel administrativo restante (en progreso)
 
-- ☐ Clientes derivados de pedidos.
-- ☐ Inventario: movimientos por venta y anulación.
+- ☑ Clientes derivados de pedidos: listado con métricas, detalle con
+  historial de pedidos (`/admin/clientes`).
+- ☐ Inventario: vista unificada de movimientos por venta y anulación
+  (hoy el historial de stock vive solo dentro de cada producto).
 
-## FASE 6 — Seguridad completa (pendiente)
+## FASE 6 — Seguridad completa (en progreso)
 
-- ☐ Security Rules de pedidos/clientes/counters con validadores y ataque sistemático.
-- ☐ Índices confirmados en producción.
+- ☑ Security Rules de pedidos/clientes/counters con validadores (33+
+  tests en `tests/rules/firestore.rules.test.ts`); falta un ataque
+  sistemático formal antes de abrir a tráfico real.
+- ☑ Índices desplegados en staging.
 
 ## FASE 7 — Cierre del MVP (pendiente)
 
 - ☐ Datos reales, accesibilidad, rendimiento, despliegue.
+- ☐ Migrar `react-router` a v8 (vulnerabilidad aceptada temporalmente, ver
+  `docs/DEPENDENCY-AUDIT.md`).
+- ☐ Notificación de pedido nuevo al admin (WhatsApp o email — decisión
+  pendiente del usuario).

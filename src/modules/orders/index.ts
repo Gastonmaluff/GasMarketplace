@@ -12,6 +12,7 @@ export {
   getOrder,
   listOrderEvents,
   listOrders,
+  listOrdersByCustomer,
   OrderError,
   transitionOrderStatus,
 } from './order.service';
