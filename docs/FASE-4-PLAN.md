@@ -1,7 +1,7 @@
 # Fase 4 — Checkout / Pedidos · Plan de implementación
 
-Estado: **en progreso**. Este documento guía el resto de la fase para que se
-apruebe antes de tocar las partes sensibles (Cloud Function, dinero, stock).
+Estado: **completa**. Los cuatro pasos del plan están implementados,
+validados y desplegados a staging.
 
 Base ya construida (módulo `src/modules/orders/`):
 
@@ -57,11 +57,20 @@ Base ya construida (módulo `src/modules/orders/`):
    stock, alta de cliente y evento, todo correcto. 15 tests unitarios de la
    lógica pura (`checkout.validation`/`checkout.revalidation`).
 
-4. **Panel admin de pedidos (`/admin/pedidos`, `/admin/pedidos/:id`).** Listado con
-   filtro por estado; detalle con cambio de estado (validado por la máquina de
-   estados, mismo `canTransition` del módulo `orders`) e historial de eventos
-   (agrega un evento `cambio_estado` en la misma transacción cliente que
-   actualiza `status`). Cancelar repone stock (`anulacion`).
+4. ✅ **Panel admin de pedidos (`/admin/pedidos`, `/admin/pedidos/:id`).** Listado
+   con filtros (búsqueda, estado) y métricas (total, pendientes, en curso,
+   facturado), en `AdminOrdersPage`. Detalle (`AdminOrderDetailPage`): datos del
+   cliente (con link directo a WhatsApp), entrega/pago (resuelve el nombre de
+   la zona desde `settings`), items y totales, e historial de eventos. Cambio
+   de estado con los botones válidos según `nextStatuses` (mismo `canTransition`
+   del módulo `orders`); cancelar pide motivo en un modal y repone stock con
+   movimientos `anulacion`, todo en una única transacción cliente
+   (`transitionOrderStatus` en `order.service.ts`) validada por las mismas
+   Security Rules del paso 2. Verificado end-to-end contra el Emulator Suite:
+   listado con métricas correctas, transición normal (pendiente→confirmado) y
+   cancelación con reposición de stock confirmada en Firestore
+   (8→9 tras cancelar 1 unidad, movimiento `anulacion` con `previousStock`/
+   `resultingStock` correctos).
 
 ## Decisiones ya confirmadas con el usuario
 
