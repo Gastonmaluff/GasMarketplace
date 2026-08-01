@@ -7,7 +7,21 @@
 export type OrderStatus =
   'pendiente' | 'confirmado' | 'en_preparacion' | 'enviado' | 'entregado' | 'cancelado';
 
+export const ORDER_STATUS_LABELS: Readonly<Record<OrderStatus, string>> = {
+  pendiente: 'Pendiente',
+  confirmado: 'Confirmado',
+  en_preparacion: 'En preparación',
+  enviado: 'Enviado',
+  entregado: 'Entregado',
+  cancelado: 'Cancelado',
+};
+
 export type DeliveryMethod = 'pickup' | 'delivery';
+
+export const DELIVERY_METHOD_LABELS: Readonly<Record<DeliveryMethod, string>> = {
+  pickup: 'Retiro en local',
+  delivery: 'Delivery',
+};
 
 export type PaymentMethod = 'cash' | 'bank_transfer' | 'pay_on_pickup' | 'cash_on_delivery';
 

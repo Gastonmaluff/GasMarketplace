@@ -15,8 +15,8 @@ function formatPercent(value: number, total: number): string {
 }
 
 /**
- * Página inicial del panel. El resumen operativo de pedidos llega con las
- * próximas fases; por ahora concentra salud de catálogo y accesos frecuentes.
+ * Página inicial del panel. Accesos frecuentes y salud de catálogo; el
+ * resumen operativo de pedidos se ve en /admin/pedidos.
  */
 export function AdminHomePage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -62,6 +62,15 @@ export function AdminHomePage() {
         title="Inicio"
       />
       <div className="admin-shortcuts" aria-label="Accesos principales">
+        <Link className="admin-shortcut" to="/admin/pedidos">
+          <span className="admin-shortcut__icon">
+            <Icon name="cart" />
+          </span>
+          <span className="admin-shortcut__copy">
+            <strong>Pedidos</strong>
+            <span>Ver, filtrar y actualizar el estado de los pedidos.</span>
+          </span>
+        </Link>
         <Link className="admin-shortcut" to="/admin/productos">
           <span className="admin-shortcut__icon">
             <Icon name="box" />
@@ -183,8 +192,7 @@ export function AdminHomePage() {
       </div>
 
       <p className="admin-page__note">
-        Los pedidos, clientes y el resumen operativo se habilitarán en las próximas fases del
-        roadmap.
+        El resumen operativo de clientes se habilitará en una próxima fase del roadmap.
       </p>
     </div>
   );
