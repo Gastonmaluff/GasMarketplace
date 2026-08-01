@@ -138,6 +138,20 @@ export async function getOrder(orderId: string): Promise<Order | null> {
   return snapshot.exists() ? toOrder(snapshot) : null;
 }
 
+/** Pedidos de un cliente, ordenados por fecha de creación descendente. */
+export async function listOrdersByCustomer(customerId: string): Promise<Order[]> {
+  const { database } = getContext();
+  const snapshot = await getDocs(
+    query(
+      collection(database, 'orders'),
+      where('customerId', '==', customerId),
+      orderBy('createdAt', 'desc'),
+      queryLimit(MAX_ORDERS),
+    ),
+  );
+  return snapshot.docs.map(toOrder);
+}
+
 export async function listOrderEvents(orderId: string): Promise<OrderEvent[]> {
   const { database } = getContext();
   const snapshot = await getDocs(
