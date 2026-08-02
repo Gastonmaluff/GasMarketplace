@@ -30,7 +30,16 @@ export type IconName =
   | 'bell'
   | 'storefront'
   | 'help'
-  | 'message';
+  | 'message'
+  | 'spray'
+  | 'drink'
+  | 'snack'
+  | 'toy'
+  | 'paw'
+  | 'sparkle'
+  | 'home'
+  | 'monitor'
+  | 'baby';
 
 interface IconProps {
   name: IconName;
@@ -92,6 +101,43 @@ const paths: Record<IconName, React.ReactNode> = {
     </>
   ),
   message: <path d="M4 4h16v13H8.5L4 21V4Z" />,
+  spray: (
+    <path d="M10 3h3v3h-3zM8 6h7l1 2v11.5a1.5 1.5 0 0 1-1.5 1.5h-6A1.5 1.5 0 0 1 7 19.5V8l1-2ZM16.5 4 19 2.5M17.5 6.5 20.5 5M17.5 9l3 .5" />
+  ),
+  drink: (
+    <path d="M10 2h4v3.2l1.6 2.3V21a1 1 0 0 1-1 1h-5.2a1 1 0 0 1-1-1V7.5L10 5.2V2ZM8.7 11h6.6" />
+  ),
+  snack: (
+    <path d="m6 8 1-4h10l1 4M5 8h14l-1.4 12.1a1 1 0 0 1-1 .9H7.4a1 1 0 0 1-1-.9L5 8ZM9 4v4M15 4v4" />
+  ),
+  toy: (
+    <>
+      <circle cx="12" cy="10.5" r="4.2" />
+      <circle cx="7.3" cy="6" r="2" />
+      <circle cx="16.7" cy="6" r="2" />
+      <path d="M8.2 14.3c0 3.8 2.2 5.7 3.8 5.7s3.8-1.9 3.8-5.7" />
+    </>
+  ),
+  paw: (
+    <>
+      <circle cx="12" cy="15.2" r="3.3" />
+      <circle cx="6.6" cy="10" r="1.8" />
+      <circle cx="10.8" cy="6.7" r="1.8" />
+      <circle cx="15.2" cy="6.7" r="1.8" />
+      <circle cx="17.4" cy="10.6" r="1.8" />
+    </>
+  ),
+  sparkle: <path d="M12 2.5 14 9l6.5 2L14 13l-2 6.5-2-6.5-6.5-2L10 9l2-6.5Z" />,
+  home: <path d="M4 11 12 4l8 7M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9" />,
+  monitor: <path d="M4 5h16v10.5H4zM9.5 19.5h5M12 15.5v4" />,
+  baby: (
+    <>
+      <circle cx="12" cy="10.5" r="6.5" />
+      <circle cx="9.3" cy="9.5" fill="currentColor" r="0.9" stroke="none" />
+      <circle cx="14.7" cy="9.5" fill="currentColor" r="0.9" stroke="none" />
+      <path d="M9 13c1.2 1.1 3.8 1.1 5 0M12 17v2.5M9.5 21l1-1.3M14.5 21l-1-1.3" />
+    </>
+  ),
 };
 
 export function Icon({ name, size = 20, className }: IconProps) {

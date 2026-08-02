@@ -21,7 +21,7 @@ import {
 } from '../shared/images';
 import { CatalogError, getCatalogContext } from '../shared/catalog-context';
 import { validateCategoryDraft } from './category.validation';
-import type { Category, CategoryDraft } from './category.types';
+import { CATEGORY_ICON_OPTIONS, type Category, type CategoryDraft } from './category.types';
 
 const MAX_CATEGORIES = 200;
 
@@ -40,6 +40,10 @@ export function toCategory(snapshot: DocumentSnapshot): Category {
       : {}),
     ...(typeof data.imagePath === 'string' && data.imagePath !== ''
       ? { imagePath: data.imagePath }
+      : {}),
+    ...(typeof data.icon === 'string' &&
+    CATEGORY_ICON_OPTIONS.includes(data.icon as (typeof CATEGORY_ICON_OPTIONS)[number])
+      ? { icon: data.icon as (typeof CATEGORY_ICON_OPTIONS)[number] }
       : {}),
   };
 }
@@ -136,6 +140,7 @@ export async function saveCategory({
         description: draft.description.trim(),
         imageUrl: nextImage.url,
         imagePath: nextImage.path,
+        icon: draft.icon,
         order: draft.order,
         active: draft.active,
         createdAt: categoryId ? existing.createdAt : serverTimestamp(),

@@ -47,7 +47,7 @@ export function CategoryQuickCreateModal({ onClose, onCreated }: CategoryQuickCr
     if (saving) return;
     setErrors([]);
     setSaving(true);
-    const draft = { name, slug, description: '', order: 0, active };
+    const draft = { name, slug, description: '', icon: '' as const, order: 0, active };
     try {
       const id = await saveCategory({ draft });
       onCreated({

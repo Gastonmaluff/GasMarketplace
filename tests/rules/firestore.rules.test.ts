@@ -45,6 +45,7 @@ function validCategory(uid: string) {
     description: '',
     imageUrl: '',
     imagePath: '',
+    icon: '',
     order: 0,
     active: true,
     createdAt: serverTimestamp(),
@@ -236,6 +237,18 @@ describe('categories', () => {
       setDoc(doc(adminDb(), 'categories/bad-order'), {
         ...validCategory(ADMIN_UID),
         order: 'primero',
+      }),
+    );
+    await assertSucceeds(
+      setDoc(doc(adminDb(), 'categories/with-icon'), {
+        ...validCategory(ADMIN_UID),
+        icon: 'drink',
+      }),
+    );
+    await assertFails(
+      setDoc(doc(adminDb(), 'categories/bad-icon'), {
+        ...validCategory(ADMIN_UID),
+        icon: 'x'.repeat(21),
       }),
     );
   });
