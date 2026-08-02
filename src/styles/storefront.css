@@ -63,10 +63,9 @@
 }
 
 /* ===================== Header ===================== */
+/* El header NO es fijo a propósito: se va con el scroll para dar la máxima
+ * superficie visible a los productos. Para ver el carrito se vuelve arriba. */
 .store-header {
-  position: sticky;
-  top: 0;
-  z-index: 30;
   background: var(--color-cream);
   border-bottom: 1px solid var(--color-border);
 }
