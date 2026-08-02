@@ -5,7 +5,6 @@ import { Alert } from '../../../../components/ui/Alert';
 import { Badge } from '../../../../components/ui/Badge';
 import { Button } from '../../../../components/ui/Button';
 import { DataTable, type DataTableColumn } from '../../../../components/ui/DataTable';
-import { Icon } from '../../../../components/ui/Icon';
 import { Modal } from '../../../../components/ui/Modal';
 import { PageHeader } from '../../../../components/ui/PageHeader';
 import { TextField } from '../../../../components/ui/TextField';
@@ -108,12 +107,10 @@ export function AdminCategoriesPage() {
       header: 'Categoría',
       render: (category) => (
         <div className="cell-title">
-          {category.imageUrl ? (
+          {category.iconUrl ? (
+            <img alt="" className="cell-thumb" height="36" src={category.iconUrl} width="36" />
+          ) : category.imageUrl ? (
             <img alt="" className="cell-thumb" height="36" src={category.imageUrl} width="36" />
-          ) : category.icon ? (
-            <span className="cell-thumb cell-thumb--icon">
-              <Icon name={category.icon} size={18} />
-            </span>
           ) : null}
           <div>
             <strong>{category.name}</strong>

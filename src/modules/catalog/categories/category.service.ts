@@ -21,7 +21,7 @@ import {
 } from '../shared/images';
 import { CatalogError, getCatalogContext } from '../shared/catalog-context';
 import { validateCategoryDraft } from './category.validation';
-import { CATEGORY_ICON_OPTIONS, type Category, type CategoryDraft } from './category.types';
+import type { Category, CategoryDraft } from './category.types';
 
 const MAX_CATEGORIES = 200;
 
@@ -41,9 +41,9 @@ export function toCategory(snapshot: DocumentSnapshot): Category {
     ...(typeof data.imagePath === 'string' && data.imagePath !== ''
       ? { imagePath: data.imagePath }
       : {}),
-    ...(typeof data.icon === 'string' &&
-    CATEGORY_ICON_OPTIONS.includes(data.icon as (typeof CATEGORY_ICON_OPTIONS)[number])
-      ? { icon: data.icon as (typeof CATEGORY_ICON_OPTIONS)[number] }
+    ...(typeof data.iconUrl === 'string' && data.iconUrl !== '' ? { iconUrl: data.iconUrl } : {}),
+    ...(typeof data.iconPath === 'string' && data.iconPath !== ''
+      ? { iconPath: data.iconPath }
       : {}),
   };
 }
@@ -66,22 +66,27 @@ export async function getCategory(categoryId: string): Promise<Category | null> 
 interface SaveCategoryInput {
   categoryId?: string;
   draft: CategoryDraft;
-  /** Imagen nueva a subir; undefined = sin cambios, null = quitar la actual. */
+  /** Imagen grande nueva a subir; undefined = sin cambios, null = quitar la actual. */
   imageFile?: File | null;
+  /** Ícono chico nuevo a subir; undefined = sin cambios, null = quitar el actual. */
+  iconFile?: File | null;
   onImageProgress?: (percent: number) => void;
+  onIconProgress?: (percent: number) => void;
 }
 
 /**
  * Crea o actualiza una categoría garantizando unicidad de slug mediante el
- * índice categorySlugs/{slug} dentro de una transacción. La imagen nueva se
- * sube antes de la transacción y se limpia si Firestore falla; la anterior se
- * borra solo después de guardar con éxito.
+ * índice categorySlugs/{slug} dentro de una transacción. Las imágenes nuevas
+ * (grande e ícono) se suben antes de la transacción y se limpian si Firestore
+ * falla; las anteriores se borran solo después de guardar con éxito.
  */
 export async function saveCategory({
   categoryId,
   draft,
   imageFile,
+  iconFile,
   onImageProgress,
+  onIconProgress,
 }: SaveCategoryInput): Promise<string> {
   const errors = validateCategoryDraft(draft);
   if (errors.length > 0) throw new CatalogError(errors);
@@ -92,18 +97,36 @@ export async function saveCategory({
     : doc(collection(database, 'categories'));
 
   let uploadedImage: { url: string; path: string } | undefined;
-  if (imageFile) {
-    const fileError = validateImageFile(imageFile);
-    if (fileError) throw new CatalogError([fileError]);
-    uploadedImage = await uploadImage(
-      storage,
-      buildImagePath(`categories/${categoryRef.id}`, imageFile),
-      imageFile,
-      onImageProgress,
-    );
+  let uploadedIcon: { url: string; path: string } | undefined;
+  try {
+    if (imageFile) {
+      const fileError = validateImageFile(imageFile);
+      if (fileError) throw new CatalogError([fileError]);
+      uploadedImage = await uploadImage(
+        storage,
+        buildImagePath(`categories/${categoryRef.id}`, imageFile),
+        imageFile,
+        onImageProgress,
+      );
+    }
+    if (iconFile) {
+      const fileError = validateImageFile(iconFile);
+      if (fileError) throw new CatalogError([fileError]);
+      uploadedIcon = await uploadImage(
+        storage,
+        buildImagePath(`categories/${categoryRef.id}`, iconFile),
+        iconFile,
+        onIconProgress,
+      );
+    }
+  } catch (error) {
+    if (uploadedImage) await deleteImageQuietly(storage, uploadedImage.path);
+    if (uploadedIcon) await deleteImageQuietly(storage, uploadedIcon.path);
+    throw error;
   }
 
   let previousImagePath: string | undefined;
+  let previousIconPath: string | undefined;
   try {
     await runTransaction(database, async (transaction) => {
       const slugRef = doc(database, 'categorySlugs', draft.slug);
@@ -123,6 +146,8 @@ export async function saveCategory({
       const previousSlug = typeof existing.slug === 'string' ? existing.slug : undefined;
       const currentImageUrl = typeof existing.imageUrl === 'string' ? existing.imageUrl : '';
       const currentImagePath = typeof existing.imagePath === 'string' ? existing.imagePath : '';
+      const currentIconUrl = typeof existing.iconUrl === 'string' ? existing.iconUrl : '';
+      const currentIconPath = typeof existing.iconPath === 'string' ? existing.iconPath : '';
 
       const nextImage = uploadedImage
         ? uploadedImage
@@ -133,6 +158,15 @@ export async function saveCategory({
         previousImagePath = currentImagePath;
       }
 
+      const nextIcon = uploadedIcon
+        ? uploadedIcon
+        : iconFile === null
+          ? { url: '', path: '' }
+          : { url: currentIconUrl, path: currentIconPath };
+      if (currentIconPath && nextIcon.path !== currentIconPath) {
+        previousIconPath = currentIconPath;
+      }
+
       transaction.set(categoryRef, {
         name: draft.name.trim().replace(/\s+/gu, ' '),
         normalizedName: normalizeText(draft.name, 'lowercase'),
@@ -140,7 +174,8 @@ export async function saveCategory({
         description: draft.description.trim(),
         imageUrl: nextImage.url,
         imagePath: nextImage.path,
-        icon: draft.icon,
+        iconUrl: nextIcon.url,
+        iconPath: nextIcon.path,
         order: draft.order,
         active: draft.active,
         createdAt: categoryId ? existing.createdAt : serverTimestamp(),
@@ -154,15 +189,13 @@ export async function saveCategory({
       }
     });
   } catch (error) {
-    if (uploadedImage) {
-      await deleteImageQuietly(storage, uploadedImage.path);
-    }
+    if (uploadedImage) await deleteImageQuietly(storage, uploadedImage.path);
+    if (uploadedIcon) await deleteImageQuietly(storage, uploadedIcon.path);
     throw error;
   }
 
-  if (previousImagePath) {
-    await deleteImageQuietly(storage, previousImagePath);
-  }
+  if (previousImagePath) await deleteImageQuietly(storage, previousImagePath);
+  if (previousIconPath) await deleteImageQuietly(storage, previousIconPath);
 
   return categoryRef.id;
 }

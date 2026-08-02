@@ -1871,35 +1871,6 @@ html[data-density='compact'] {
   color: var(--color-muted);
   font-size: 0.88rem;
 }
-.icon-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-}
-.icon-picker__option {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  color: var(--color-text);
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease,
-    color 0.15s ease;
-}
-.icon-picker__option:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-.icon-picker__option--selected {
-  border-color: var(--color-primary);
-  background: var(--color-primary-tint);
-  color: var(--color-primary);
-}
 .admin-section__heading {
   display: flex;
   align-items: center;
@@ -2343,10 +2314,6 @@ html[data-density='compact'] {
 }
 .cell-thumb--empty {
   color: var(--color-primary);
-}
-.cell-thumb--icon {
-  color: var(--color-primary);
-  background: var(--color-primary-tint);
 }
 .cell-badges,
 .stock-cell {
