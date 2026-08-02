@@ -1,6 +1,5 @@
 import { isValidSlug } from '../shared/text';
 import {
-  CATEGORY_ICON_OPTIONS,
   MAX_CATEGORY_DESCRIPTION_LENGTH,
   MAX_CATEGORY_NAME_LENGTH,
   type CategoryDraft,
@@ -23,9 +22,6 @@ export function validateCategoryDraft(draft: CategoryDraft): string[] {
   }
   if (!Number.isInteger(draft.order) || draft.order < 0 || draft.order > 10_000) {
     errors.push('El orden debe ser un entero entre 0 y 10000.');
-  }
-  if (draft.icon !== '' && !CATEGORY_ICON_OPTIONS.includes(draft.icon)) {
-    errors.push('El ícono elegido no es válido.');
   }
 
   return errors;

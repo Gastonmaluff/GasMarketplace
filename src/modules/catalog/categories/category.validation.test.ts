@@ -8,7 +8,6 @@ function draft(overrides: Partial<CategoryDraft> = {}): CategoryDraft {
     name: 'Lácteos y Fiambres',
     slug: 'lacteos-y-fiambres',
     description: '',
-    icon: '',
     order: 0,
     active: true,
     ...overrides,
@@ -34,11 +33,5 @@ describe('validateCategoryDraft', () => {
     for (const order of [-1, 1.5]) {
       expect(validateCategoryDraft(draft({ order }))).not.toEqual([]);
     }
-  });
-
-  it('acepta un ícono válido y rechaza uno desconocido', () => {
-    expect(validateCategoryDraft(draft({ icon: 'drink' }))).toEqual([]);
-    // @ts-expect-error valor fuera del set permitido, a propósito para el test
-    expect(validateCategoryDraft(draft({ icon: 'unicornio' }))).not.toEqual([]);
   });
 });

@@ -226,7 +226,16 @@ export function StorefrontHeader({ categories, settings }: StorefrontHeaderProps
                 to={`/categoria/${category.slug}`}
               >
                 <span className="store-category-drawer__card-icon">
-                  <Icon name={category.icon ?? 'tag'} size={26} />
+                  {category.iconUrl ? (
+                    <img
+                      alt=""
+                      className="store-category-drawer__card-img"
+                      loading="lazy"
+                      src={category.iconUrl}
+                    />
+                  ) : (
+                    <Icon name="tag" size={26} />
+                  )}
                 </span>
                 {category.name}
               </Link>

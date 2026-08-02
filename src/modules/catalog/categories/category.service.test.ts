@@ -7,7 +7,6 @@ const validDraft = {
   name: 'Bebidas',
   slug: 'bebidas',
   description: '',
-  icon: '' as const,
   order: 0,
   active: true,
 };

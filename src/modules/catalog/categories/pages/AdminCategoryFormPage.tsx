@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router';
 
 import { Alert } from '../../../../components/ui/Alert';
 import { Button } from '../../../../components/ui/Button';
-import { Icon } from '../../../../components/ui/Icon';
 import { ImageUpload } from '../../../../components/ui/ImageUpload';
 import { LoadingState } from '../../../../components/ui/LoadingState';
 import { NumericInput } from '../../../../components/ui/inputs/NumericInput';
@@ -12,13 +11,12 @@ import { TextField } from '../../../../components/ui/TextField';
 import { slugify } from '../../shared/text';
 import { CatalogError } from '../../shared/catalog-context';
 import { getCategory, saveCategory } from '../category.service';
-import { CATEGORY_ICON_OPTIONS, type CategoryDraft } from '../category.types';
+import type { CategoryDraft } from '../category.types';
 
 const emptyDraft: CategoryDraft = {
   name: '',
   slug: '',
   description: '',
-  icon: '',
   order: 0,
   active: true,
 };
@@ -32,6 +30,9 @@ export function AdminCategoryFormPage() {
   const [existingImageUrl, setExistingImageUrl] = useState<string | undefined>();
   const [imageFile, setImageFile] = useState<File | null | undefined>();
   const [imageProgress, setImageProgress] = useState<number | null>(null);
+  const [existingIconUrl, setExistingIconUrl] = useState<string | undefined>();
+  const [iconFile, setIconFile] = useState<File | null | undefined>();
+  const [iconProgress, setIconProgress] = useState<number | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -50,11 +51,11 @@ export function AdminCategoryFormPage() {
           name: category.name,
           slug: category.slug,
           description: category.description,
-          icon: category.icon ?? '',
           order: category.order,
           active: category.active,
         });
         setExistingImageUrl(category.imageUrl);
+        setExistingIconUrl(category.iconUrl);
       })
       .catch(() => {
         if (!cancelled) setLoadError('No se pudo cargar la categoría.');
@@ -90,12 +91,15 @@ export function AdminCategoryFormPage() {
     setErrors([]);
     setSaving(true);
     setImageProgress(imageFile ? 0 : null);
+    setIconProgress(iconFile ? 0 : null);
     try {
       await saveCategory({
         ...(categoryId ? { categoryId } : {}),
         draft,
         ...(imageFile !== undefined ? { imageFile } : {}),
+        ...(iconFile !== undefined ? { iconFile } : {}),
         onImageProgress: setImageProgress,
+        onIconProgress: setIconProgress,
       });
       navigate('/admin/categorias');
     } catch (cause) {
@@ -107,6 +111,7 @@ export function AdminCategoryFormPage() {
     } finally {
       setSaving(false);
       setImageProgress(null);
+      setIconProgress(null);
     }
   }
 
@@ -174,29 +179,25 @@ export function AdminCategoryFormPage() {
       </section>
 
       <section className="admin-section">
-        <h2>Ícono</h2>
+        <h2>Ícono (opcional)</h2>
         <p className="admin-section__hint">
-          Se muestra en el menú "Todas las categorías" del storefront.
+          Se muestra en el menú "Todas las categorías" del storefront. Ideal: imagen cuadrada de
+          512×512 px, PNG con fondo transparente.
         </p>
-        <div className="icon-picker" role="radiogroup">
-          {CATEGORY_ICON_OPTIONS.map((icon) => (
-            <button
-              aria-checked={draft.icon === icon}
-              aria-label={icon}
-              className={`icon-picker__option ${draft.icon === icon ? 'icon-picker__option--selected' : ''}`}
-              key={icon}
-              onClick={() => update({ icon: draft.icon === icon ? '' : icon })}
-              role="radio"
-              type="button"
-            >
-              <Icon name={icon} size={22} />
-            </button>
-          ))}
-        </div>
+        <ImageUpload
+          imageUrl={iconFile === null ? undefined : existingIconUrl}
+          label="Seleccionar ícono"
+          onFileSelect={setIconFile}
+          onRemoveExisting={() => setIconFile(null)}
+          progress={iconProgress}
+        />
       </section>
 
       <section className="admin-section">
         <h2>Imagen (opcional)</h2>
+        <p className="admin-section__hint">
+          Foto grande de la categoría (tarjetas del inicio y cabecera de la categoría).
+        </p>
         <ImageUpload
           imageUrl={imageFile === null ? undefined : existingImageUrl}
           onFileSelect={setImageFile}

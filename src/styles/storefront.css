@@ -336,6 +336,12 @@
   border-radius: 50%;
   background: var(--color-surface);
   color: var(--color-primary);
+  overflow: hidden;
+}
+.store-category-drawer__card-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 .store-category-drawer__footer {
   text-align: center;
