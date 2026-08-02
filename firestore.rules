@@ -148,7 +148,7 @@ service cloud.firestore {
     function isValidCategory() {
       return incoming().keys().hasOnly([
           'name', 'normalizedName', 'slug', 'description', 'imageUrl',
-          'imagePath', 'order', 'active', 'createdAt', 'createdBy',
+          'imagePath', 'icon', 'order', 'active', 'createdAt', 'createdBy',
           'updatedAt', 'updatedBy'
         ]) &&
         requiredString(incoming().name, 80) &&
@@ -157,6 +157,7 @@ service cloud.firestore {
         boundedString(incoming().description, 500) &&
         boundedString(incoming().imageUrl, 2048) &&
         boundedString(incoming().imagePath, 300) &&
+        boundedString(incoming().icon, 20) &&
         intBetween(incoming().order, 0, 10000) &&
         incoming().active is bool &&
         auditedNow();

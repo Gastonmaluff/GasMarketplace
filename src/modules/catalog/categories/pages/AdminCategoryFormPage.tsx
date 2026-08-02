@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 
 import { Alert } from '../../../../components/ui/Alert';
 import { Button } from '../../../../components/ui/Button';
+import { Icon } from '../../../../components/ui/Icon';
 import { ImageUpload } from '../../../../components/ui/ImageUpload';
 import { LoadingState } from '../../../../components/ui/LoadingState';
 import { NumericInput } from '../../../../components/ui/inputs/NumericInput';
@@ -11,9 +12,16 @@ import { TextField } from '../../../../components/ui/TextField';
 import { slugify } from '../../shared/text';
 import { CatalogError } from '../../shared/catalog-context';
 import { getCategory, saveCategory } from '../category.service';
-import type { CategoryDraft } from '../category.types';
+import { CATEGORY_ICON_OPTIONS, type CategoryDraft } from '../category.types';
 
-const emptyDraft: CategoryDraft = { name: '', slug: '', description: '', order: 0, active: true };
+const emptyDraft: CategoryDraft = {
+  name: '',
+  slug: '',
+  description: '',
+  icon: '',
+  order: 0,
+  active: true,
+};
 
 export function AdminCategoryFormPage() {
   const navigate = useNavigate();
@@ -42,6 +50,7 @@ export function AdminCategoryFormPage() {
           name: category.name,
           slug: category.slug,
           description: category.description,
+          icon: category.icon ?? '',
           order: category.order,
           active: category.active,
         });
@@ -161,6 +170,28 @@ export function AdminCategoryFormPage() {
               Activa<small>Solo las categorías activas serán visibles en la tienda.</small>
             </span>
           </label>
+        </div>
+      </section>
+
+      <section className="admin-section">
+        <h2>Ícono</h2>
+        <p className="admin-section__hint">
+          Se muestra en el menú "Todas las categorías" del storefront.
+        </p>
+        <div className="icon-picker" role="radiogroup">
+          {CATEGORY_ICON_OPTIONS.map((icon) => (
+            <button
+              aria-checked={draft.icon === icon}
+              aria-label={icon}
+              className={`icon-picker__option ${draft.icon === icon ? 'icon-picker__option--selected' : ''}`}
+              key={icon}
+              onClick={() => update({ icon: draft.icon === icon ? '' : icon })}
+              role="radio"
+              type="button"
+            >
+              <Icon name={icon} size={22} />
+            </button>
+          ))}
         </div>
       </section>
 

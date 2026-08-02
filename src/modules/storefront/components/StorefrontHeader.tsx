@@ -218,23 +218,24 @@ export function StorefrontHeader({ categories, settings }: StorefrontHeaderProps
           id="store-category-drawer"
         >
           <div className="store-category-drawer__grid">
-            <Link
-              className="store-category-drawer__link"
-              onClick={() => setCategoriesOpen(false)}
-              to="/catalogo"
-            >
-              Ver todo el catálogo
-            </Link>
             {categories.map((category) => (
               <Link
-                className="store-category-drawer__link"
+                className="store-category-drawer__card"
                 key={category.id}
                 onClick={() => setCategoriesOpen(false)}
                 to={`/categoria/${category.slug}`}
               >
+                <span className="store-category-drawer__card-icon">
+                  <Icon name={category.icon ?? 'tag'} size={26} />
+                </span>
                 {category.name}
               </Link>
             ))}
+          </div>
+          <div className="store-category-drawer__footer">
+            <Link onClick={() => setCategoriesOpen(false)} to="/catalogo">
+              Ver todo el catálogo <span aria-hidden="true">→</span>
+            </Link>
           </div>
         </div>
       </nav>
